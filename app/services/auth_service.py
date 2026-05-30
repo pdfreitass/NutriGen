@@ -4,26 +4,18 @@ Módulo de autenticação e gerenciamento de usuários.
 Usa SQL Server via SQLAlchemy síncrono + bcrypt para hash de senha.
 """
 
-import os
 import bcrypt
 import jwt as pyjwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 
 from sqlalchemy.exc import IntegrityError
+from app.config import JWT_SECRET_KEY, JWT_ALGORITHM, JWT_EXPIRATION_HOURS
 from app.database import SessionFactory
 from app.repositories.usuario_repository import UsuarioRepository
 from app.models.schemas import Endereco
 
-# Chave secreta para JWT (obrigatória via .env)
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError(
-        "JWT_SECRET_KEY não configurada. Defina a variável de ambiente "
-        "JWT_SECRET_KEY no arquivo .env ou no ambiente."
-    )
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_HOURS = 24
+SECRET_KEY = JWT_SECRET_KEY
 RESET_TOKEN_EXPIRATION_HOURS = 1
 
 
