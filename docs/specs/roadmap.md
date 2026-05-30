@@ -13,13 +13,13 @@
 | Métrica | Valor |
 |---------|:----:|
 | Total de SPECs | **25** |
-| Concluídas | **2** |
+| Concluídas | **3** |
 | Em andamento | **0** |
-| Pendentes | **23** |
-| Progresso Geral | **8%** |
+| Pendentes | **22** |
+| Progresso Geral | **12%** |
 
 ```
-Progresso: [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 8%
+Progresso: [██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 12%
 ```
 
 ---
@@ -32,7 +32,7 @@ Progresso: [████░░░░░░░░░░░░░░░░░░�
 |----|------|--------|
 | [SPEC-001](SPEC-001-configuracao-deepseek.md) | Configuração do Cliente DeepSeek | ✅ Concluído |
 | [SPEC-002](SPEC-002-catalogo-alimentos.md) | Catálogo de Alimentos (FoodCatalog) | ✅ Concluído |
-| [SPEC-003](SPEC-003-extracao-nl-json.md) | Serviço de Extração NL→JSON | 🔴 Pendente |
+| [SPEC-003](SPEC-003-extracao-nl-json.md) | Serviço de Extração NL→JSON | ✅ Concluído |
 | [SPEC-004](SPEC-004-geracao-planos-ia.md) | Serviço de Geração de Planos via IA | 🔴 Pendente |
 | [SPEC-005](SPEC-005-pipeline-validacao.md) | Pipeline de Validação Pós-Geração | 🔴 Pendente |
 | [SPEC-006](SPEC-006-orquestrador.md) | Atualização do Orquestrador (DietPlannerUseCase) | 🔴 Pendente |

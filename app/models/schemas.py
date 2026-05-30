@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional, Literal
+from typing import Any, Dict, List, Optional, Literal
 from pydantic import BaseModel, Field, model_validator, EmailStr
 
 
@@ -187,3 +187,44 @@ class DietGenerateResponse(BaseModel):
     tmb: float = Field(..., description="Taxa Metabólica Basal em kcal")
     planos: List[PlanoAlimentar] = Field(..., description="Planos alimentares gerados")
     pdf_url: str = Field(..., description="URL para download do PDF")
+
+
+# ─── SPEC-003: Extração NL→JSON ─────────────────────
+
+class Perfil(BaseModel):
+    """Perfil demográfico extraído do texto do usuário."""
+    sexo: Optional[Literal["masculino", "feminino"]] = Field(
+        None, description="Sexo biológico"
+    )
+    idade: Optional[int] = Field(
+        None, ge=1, le=120, description="Idade em anos (1-120)"
+    )
+    peso_kg: Optional[float] = Field(
+        None, ge=20, le=500, description="Peso em quilogramas (20-500)"
+    )
+    altura_cm: Optional[float] = Field(
+        None, ge=50, le=280, description="Altura em centímetros (50-280)"
+    )
+
+
+class RotinaExtraida(BaseModel):
+    """Rotina e objetivo extraídos do texto do usuário."""
+    nivel_atividade: Optional[Literal["sedentario", "moderado", "ativo"]] = Field(
+        None, description="Nível de atividade física"
+    )
+    objetivo: Optional[Literal["perda_de_peso", "manutencao", "ganho_de_massa"]] = Field(
+        None, description="Objetivo da dieta"
+    )
+    detalhes: Optional[str] = Field(
+        None, description="Detalhes adicionais da rotina"
+    )
+
+
+class PerfilExtraido(BaseModel):
+    """Resultado da extração NL→JSON — perfil completo do usuário."""
+    perfil: Perfil = Field(default_factory=Perfil, description="Dados demográficos")
+    rotina: RotinaExtraida = Field(default_factory=RotinaExtraida, description="Rotina e objetivo")
+    preferencias: List[str] = Field(default_factory=list, description="Alimentos que o usuário gosta")
+    restricoes: List[str] = Field(default_factory=list, description="Alimentos que o usuário NÃO come / tem alergia")
+    condicoes: List[str] = Field(default_factory=list, description="Condições especiais detectadas")
+    extra: Dict[str, Any] = Field(default_factory=dict, description="Dados adicionais extraídos")
