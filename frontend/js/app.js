@@ -1,0 +1,911 @@
+/* =============================================
+   Diet Plan Generator - Frontend Application
+   ============================================= */
+
+// API base: usa caminho relativo pois o frontend é servido pelo próprio FastAPI
+const API_BASE = '';
+
+// ─── State ────────────────────────────────────
+const state = {
+    currentUser: null,       // { id, nome_completo, cpf, email, ... }
+    currentPage: 'login',
+    dietResult: null,        // DietGenerateResponse
+};
+
+// ─── DOM Cache ────────────────────────────────
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+const dom = {};
+let cepTimeout = null;
+
+function cacheDom() {
+
+    // Pages
+    dom.pageLogin = $('#page-login');
+    dom.pageRegister = $('#page-register');
+    dom.pageForgotPassword = $('#page-forgot-password');
+    dom.pageResetPassword = $('#page-reset-password');
+    dom.pageDiet = $('#page-diet');
+    dom.pageResults = $('#page-results');
+
+    // Login form
+    dom.loginForm = $('#login-form');
+    dom.loginEmail = $('#login-email');
+    dom.loginSenha = $('#login-senha');
+    dom.loginError = $('#login-error');
+    dom.loginBtn = $('#login-btn');
+
+    // Register form
+    dom.registerForm = $('#register-form');
+    dom.regNome = $('#reg-nome');
+    dom.regCpf = $('#reg-cpf');
+    dom.regTelefone = $('#reg-telefone');
+    dom.regEmail = $('#reg-email');
+    dom.regCep = $('#reg-cep');
+    dom.regLogradouro = $('#reg-logradouro');
+    dom.regBairro = $('#reg-bairro');
+    dom.regCidade = $('#reg-cidade');
+    dom.regEstado = $('#reg-estado');
+    dom.regSenha = $('#reg-senha');
+    dom.regSenhaConfirm = $('#reg-senha-confirm');
+    dom.regError = $('#reg-error');
+    dom.regSuccess = $('#reg-success');
+    dom.regBtn = $('#reg-btn');
+    dom.regCepSpinner = $('#reg-cep-spinner');
+
+    // Forgot password form
+    dom.forgotForm = $('#forgot-form');
+    dom.forgotEmail = $('#forgot-email');
+    dom.forgotError = $('#forgot-error');
+    dom.forgotSuccess = $('#forgot-success');
+    dom.forgotBtn = $('#forgot-btn');
+
+    // Reset password form
+    dom.resetForm = $('#reset-form');
+    dom.resetToken = $('#reset-token');
+    dom.resetSenha = $('#reset-senha');
+    dom.resetSenhaConfirm = $('#reset-senha-confirm');
+    dom.resetError = $('#reset-error');
+    dom.resetSuccess = $('#reset-success');
+    dom.resetBtn = $('#reset-btn');
+
+    // Strength bars
+    dom.strengthBars = $$('.strength-bar');
+    dom.pwdReqs = $$('.password-requirements li');
+
+    // Diet form
+    dom.dietForm = $('#diet-form');
+    dom.dietNome = $('#diet-nome');
+    dom.dietSexo = $('#diet-sexo');
+    dom.dietIdade = $('#diet-idade');
+    dom.dietPeso = $('#diet-peso');
+    dom.dietAltura = $('#diet-altura');
+    dom.dietError = $('#diet-error');
+    dom.dietBtn = $('#diet-btn');
+
+    // Routine fields
+    dom.routineNome = $$('.routine-nome');
+    dom.routineAtividade = $$('.routine-atividade');
+    dom.routineObjetivo = $$('.routine-objetivo');
+    dom.routineAlimentos = $$('.routine-alimentos');
+
+    // Header
+    dom.headerUser = $('#header-user');
+    dom.headerUserName = $('#header-user-name');
+    dom.btnLogout = $('#btn-logout');
+
+    // Loading overlay
+    dom.loadingOverlay = $('#loading-overlay');
+    dom.loadingText = $('#loading-text');
+
+    // Results
+    dom.pageResults = $('#page-results');
+    dom.resultsContent = $('#results-content');
+    dom.btnNewDiet = $('#btn-new-diet');
+}
+
+// ─── Navigation ───────────────────────────────
+function showPage(pageName) {
+    // Hide all pages
+    ['login', 'register', 'forgot-password', 'reset-password', 'diet', 'results'].forEach(p => {
+        const key = 'page' + p.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+        const el = dom[key];
+        if (el) el.classList.add('hidden');
+    });
+
+    const pageMap = {
+        login: dom.pageLogin,
+        register: dom.pageRegister,
+        'forgot-password': dom.pageForgotPassword,
+        'reset-password': dom.pageResetPassword,
+        diet: dom.pageDiet,
+        results: dom.pageResults,
+    };
+
+    const target = pageMap[pageName];
+    if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('page-active');
+    }
+
+    state.currentPage = pageName;
+
+    // Update header visibility
+    updateHeader();
+}
+
+function updateHeader() {
+    if (state.currentUser) {
+        dom.headerUser.classList.remove('hidden');
+        dom.headerUserName.textContent = state.currentUser.nome_completo.split(' ')[0];
+    } else {
+        dom.headerUser.classList.add('hidden');
+    }
+}
+
+// ─── Loading ──────────────────────────────────
+function showLoading(text = 'Processando...') {
+    dom.loadingText.textContent = text;
+    dom.loadingOverlay.classList.remove('hidden');
+}
+
+function hideLoading() {
+    dom.loadingOverlay.classList.add('hidden');
+}
+
+// ─── API Helper ───────────────────────────────
+async function apiRequest(method, path, body = null) {
+    const url = `${API_BASE}${path}`;
+    const options = {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+    };
+
+    if (body) {
+        options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url, options);
+
+    // Tentar parsear JSON; se falhar (ex: resposta HTML/binária), trata como erro genérico
+    let data;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        try {
+            data = await response.json();
+        } catch (_parseError) {
+            throw new Error(`Resposta inválida do servidor (status ${response.status})`);
+        }
+    } else {
+        // Resposta não-JSON (ex: erro 500 em HTML, binário inesperado)
+        const text = await response.text().catch(() => '');
+        throw new Error(
+            text
+                ? `Erro do servidor (${response.status}): ${text.substring(0, 200)}`
+                : `Erro do servidor (status ${response.status})`
+        );
+    }
+
+    if (!response.ok) {
+        const detail = data.detail || data.message || 'Erro desconhecido';
+        // Pydantic validation errors come as array
+        if (Array.isArray(detail)) {
+            const msgs = detail.map(e => e.msg || e.message).join('; ');
+            throw new Error(msgs);
+        }
+        throw new Error(detail);
+    }
+
+    return data;
+}
+
+// ─── Auth: Login ──────────────────────────────
+function showLoginError(msg) {
+    dom.loginError.querySelector('.alert-text').textContent = msg;
+    dom.loginError.classList.remove('hidden');
+}
+
+// ─── Auth: Register ────────────────────────────
+function showRegError(msg) {
+    dom.regError.querySelector('.alert-text').textContent = msg;
+    dom.regError.classList.remove('hidden');
+}
+
+// ─── Password Strength ────────────────────────
+function updatePasswordStrength(pwd) {
+    const reqs = {
+        length: pwd.length >= 8,
+        upper: /[A-Z]/.test(pwd),
+        number: /[0-9]/.test(pwd),
+        special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pwd),
+    };
+
+    const items = ['req-length', 'req-upper', 'req-number', 'req-special'];
+    items.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const key = id.replace('req-', '');
+        if (reqs[key]) {
+            el.classList.add('met');
+        } else {
+            el.classList.remove('met');
+        }
+    });
+
+    const metCount = Object.values(reqs).filter(Boolean).length;
+    const bars = dom.strengthBars;
+
+    bars.forEach((bar, i) => {
+        bar.className = 'strength-bar';
+        if (i < metCount) {
+            if (metCount <= 2) bar.classList.add('weak');
+            else if (metCount === 3) bar.classList.add('medium');
+            else bar.classList.add('strong');
+        }
+    });
+}
+
+// ─── Field Error Helpers ──────────────────────
+function showFieldError(input, msg) {
+    input.classList.add('error');
+    const parent = input.closest('.form-group');
+    if (parent) {
+        const errorEl = parent.querySelector('.form-error');
+        if (errorEl) errorEl.textContent = msg;
+    }
+}
+
+function clearFieldError(input) {
+    input.classList.remove('error');
+    const parent = input.closest('.form-group');
+    if (parent) {
+        const errorEl = parent.querySelector('.form-error');
+        if (errorEl) errorEl.textContent = '';
+    }
+}
+
+// ─── ViaCEP Address Lookup ────────────────────
+async function fetchAddress(cep) {
+    dom.regCepSpinner.classList.add('active');
+    dom.regCep.classList.add('success');
+
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (data.erro) {
+            dom.regCep.classList.remove('success');
+            dom.regCep.classList.add('error');
+            dom.regLogradouro.value = '';
+            dom.regBairro.value = '';
+            dom.regCidade.value = '';
+            dom.regEstado.value = '';
+            showFieldError(dom.regCep, 'CEP não encontrado');
+            return;
+        }
+
+        dom.regLogradouro.value = data.logradouro || '';
+        dom.regBairro.value = data.bairro || '';
+        dom.regCidade.value = data.localidade || '';
+        dom.regEstado.value = data.uf || '';
+        dom.regCep.classList.remove('error');
+        dom.regCep.classList.add('success');
+        clearFieldError(dom.regCep);
+    } catch (err) {
+        dom.regCep.classList.remove('success');
+        showFieldError(dom.regCep, 'Erro ao buscar CEP');
+    } finally {
+        dom.regCepSpinner.classList.remove('active');
+    }
+}
+
+// ─── Diet Generation ──────────────────────────
+
+// Add routine dynamically (3rd routine with different defaults)
+function initializeRoutines() {
+    // Set default values for the 3 routines
+    const defaultRoutines = [
+        { nome: 'Low Carb', atividade: 'sedentario', objetivo: 'perda_de_peso', alimentos: 'frango, ovos, brócolis, espinafre, abacate' },
+        { nome: 'Balanceada', atividade: 'moderado', objetivo: 'manutencao', alimentos: 'arroz integral, frango, feijão, salada, banana' },
+        { nome: 'High Protein', atividade: 'ativo', objetivo: 'ganho_de_massa', alimentos: 'frango, batata doce, ovos, aveia, whey protein' },
+    ];
+
+    dom.routineNome.forEach((input, i) => {
+        if (defaultRoutines[i]) {
+            input.value = defaultRoutines[i].nome;
+        }
+    });
+
+    dom.routineAtividade.forEach((select, i) => {
+        if (defaultRoutines[i]) {
+            select.value = defaultRoutines[i].atividade;
+        }
+    });
+
+    dom.routineObjetivo.forEach((select, i) => {
+        if (defaultRoutines[i]) {
+            select.value = defaultRoutines[i].objetivo;
+        }
+    });
+
+    dom.routineAlimentos.forEach((input, i) => {
+        if (defaultRoutines[i]) {
+            input.value = defaultRoutines[i].alimentos;
+        }
+    });
+}
+
+function showDietError(msg) {
+    dom.dietError.querySelector('.alert-text').textContent = msg;
+    dom.dietError.classList.remove('hidden');
+}
+
+// ─── Results Rendering ────────────────────────
+function renderResults(result) {
+    dom.resultsContent.innerHTML = '';
+
+    // Summary stats
+    const summary = document.createElement('div');
+    summary.className = 'result-summary';
+    summary.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-value">${result.tmb.toFixed(0)}</div>
+            <div class="stat-label">TMB (kcal/dia)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${result.paciente.peso_kg.toFixed(1)} kg</div>
+            <div class="stat-label">Peso</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${result.paciente.altura_cm.toFixed(0)} cm</div>
+            <div class="stat-label">Altura</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${result.paciente.idade} anos</div>
+            <div class="stat-label">Idade</div>
+        </div>
+    `;
+    dom.resultsContent.appendChild(summary);
+
+    // Patient name
+    const patientInfo = document.createElement('p');
+    patientInfo.style.cssText = 'font-size: 0.875rem; color: var(--gray-500); margin-bottom: 1.5rem;';
+    patientInfo.textContent = `Paciente: ${result.paciente.nome} | Sexo: ${result.paciente.sexo}`;
+    dom.resultsContent.appendChild(patientInfo);
+
+    // Plans
+    result.planos.forEach((plano, index) => {
+        const planCard = document.createElement('div');
+        planCard.className = 'plan-card';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'plan-header';
+        header.innerHTML = `
+            <span class="plan-name">${index + 1}. ${plano.nome}</span>
+            <span class="plan-badge">${getObjetivoLabel(plano.objetivo)}</span>
+        `;
+        planCard.appendChild(header);
+
+        // Body
+        const body = document.createElement('div');
+        body.className = 'plan-body';
+
+        // GET Calórico
+        const getInfo = document.createElement('p');
+        getInfo.style.cssText = 'font-size: 0.875rem; color: var(--gray-500); margin-bottom: 1rem;';
+        getInfo.innerHTML = `<strong>GET:</strong> ${plano.get_calorico.toFixed(0)} kcal/dia | <strong>Nível:</strong> ${getNivelLabel(plano.nivel_atividade)}`;
+        body.appendChild(getInfo);
+
+        // Macros
+        const macrosDiv = document.createElement('div');
+        macrosDiv.className = 'plan-macros';
+        macrosDiv.innerHTML = `
+            <div class="macro-item">
+                <div class="macro-value">${plano.macros.proteina_g.toFixed(1)}g</div>
+                <div class="macro-label">Proteína</div>
+            </div>
+            <div class="macro-item">
+                <div class="macro-value">${plano.macros.carboidrato_g.toFixed(1)}g</div>
+                <div class="macro-label">Carboidrato</div>
+            </div>
+            <div class="macro-item">
+                <div class="macro-value">${plano.macros.gordura_g.toFixed(1)}g</div>
+                <div class="macro-label">Gordura</div>
+            </div>
+        `;
+        body.appendChild(macrosDiv);
+
+        // Refeições
+        const mealsDiv = document.createElement('div');
+        mealsDiv.className = 'plan-meals';
+
+        plano.refeicoes.forEach(refeicao => {
+            const mealGroup = document.createElement('div');
+            mealGroup.className = 'meal-group';
+
+            const mealTitle = document.createElement('div');
+            mealTitle.className = 'meal-title';
+            mealTitle.textContent = refeicao.nome;
+            mealGroup.appendChild(mealTitle);
+
+            const table = document.createElement('table');
+            table.className = 'meal-table';
+
+            // Table header
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th>Alimento</th>
+                    <th>Qtd (g)</th>
+                    <th>PTN (g)</th>
+                    <th>CHO (g)</th>
+                    <th>GOR (g)</th>
+                    <th>kcal</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+
+            // Table body
+            const tbody = document.createElement('tbody');
+            refeicao.alimentos.forEach(alimento => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${alimento.nome}</strong></td>
+                    <td>${alimento.quantidade_g.toFixed(0)}</td>
+                    <td>${alimento.proteina_g.toFixed(1)}</td>
+                    <td>${alimento.carboidrato_g.toFixed(1)}</td>
+                    <td>${alimento.gordura_g.toFixed(1)}</td>
+                    <td>${alimento.calorias_kcal.toFixed(0)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            mealGroup.appendChild(table);
+            mealsDiv.appendChild(mealGroup);
+        });
+
+        body.appendChild(mealsDiv);
+        planCard.appendChild(body);
+        dom.resultsContent.appendChild(planCard);
+    });
+
+    // PDF Download
+    const pdfArea = document.createElement('div');
+    pdfArea.className = 'pdf-download-area';
+    pdfArea.innerHTML = `
+        <p style="margin-bottom: 1rem; color: var(--gray-600);">
+            Baixe o PDF completo com todos os planos alimentares formatados.
+        </p>
+        <a href="${API_BASE}${result.pdf_url}" target="_blank" class="btn btn-success btn-lg">
+            📄 Baixar PDF
+        </a>
+    `;
+    dom.resultsContent.appendChild(pdfArea);
+
+    hideLoading();
+}
+
+function getObjetivoLabel(nivel) {
+    const map = {
+        'perda_de_peso': '📉 Perda de Peso',
+        'manutencao': '⚖️ Manutenção',
+        'ganho_de_massa': '💪 Ganho de Massa',
+    };
+    return map[nivel] || nivel;
+}
+
+function getNivelLabel(nivel) {
+    const map = {
+        'sedentario': 'Sedentário',
+        'moderado': 'Moderado',
+        'ativo': 'Ativo',
+    };
+    return map[nivel] || nivel;
+}
+
+// ─── Alert helper ─────────────────────────────
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 1000; max-width: 400px; box-shadow: var(--shadow-lg); animation: fadeIn 0.3s ease;';
+    const icons = { success: '✅', error: '❌', warning: '⚠️' };
+    alertDiv.innerHTML = `
+        <span class="alert-icon">${icons[type] || 'ℹ️'}</span>
+        <span class="alert-text">${message}</span>
+    `;
+    document.body.appendChild(alertDiv);
+
+    setTimeout(() => {
+        alertDiv.style.opacity = '0';
+        alertDiv.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 4000);
+}
+
+// ─── Logout ───────────────────────────────────
+function logout() {
+    state.currentUser = null;
+    state.dietResult = null;
+    showPage('login');
+    dom.loginForm.reset();
+    dom.loginError.classList.add('hidden');
+    showAlert('success', 'Logout realizado com sucesso!');
+}
+
+// ─── CPF formatting helper ────────────────────
+function formatCPF(val) {
+    val = val.replace(/\D/g, '');
+    if (val.length > 11) val = val.slice(0, 11);
+    if (val.length > 9) {
+        val = val.slice(0, 3) + '.' + val.slice(3, 6) + '.' + val.slice(6, 9) + '-' + val.slice(9);
+    } else if (val.length > 6) {
+        val = val.slice(0, 3) + '.' + val.slice(3, 6) + '.' + val.slice(6);
+    } else if (val.length > 3) {
+        val = val.slice(0, 3) + '.' + val.slice(3);
+    }
+    return val;
+}
+
+// ─── Telefone formatting helper ───────────────
+function formatTelefone(val) {
+    val = val.replace(/\D/g, '');
+    if (val.length > 11) val = val.slice(0, 11);
+    if (val.length > 7) {
+        val = '(' + val.slice(0, 2) + ') ' + val.slice(2, 7) + '-' + val.slice(7);
+    } else if (val.length > 2) {
+        val = '(' + val.slice(0, 2) + ') ' + val.slice(2);
+    } else if (val.length > 0) {
+        val = '(' + val;
+    }
+    return val;
+}
+
+// ─── Initialize ───────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    cacheDom();
+    initializeRoutines();
+
+    // ── Login Form ──
+    dom.loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        dom.loginError.classList.add('hidden');
+
+        const email = dom.loginEmail.value.trim();
+        const senha = dom.loginSenha.value;
+
+        if (!email || !senha) {
+            showLoginError('Preencha todos os campos.');
+            return;
+        }
+
+        dom.loginBtn.classList.add('loading');
+
+        try {
+            const data = await apiRequest('POST', '/api/auth/login', { email, senha });
+            state.currentUser = data.usuario;
+            showPage('diet');
+            dom.loginForm.reset();
+            dom.loginError.classList.add('hidden');
+            showAlert('success', 'Login realizado com sucesso!');
+        } catch (err) {
+            showLoginError(err.message);
+        } finally {
+            dom.loginBtn.classList.remove('loading');
+        }
+    });
+
+    // ── CPF formatting ──
+    dom.regCpf.addEventListener('input', (e) => {
+        e.target.value = formatCPF(e.target.value);
+    });
+
+    // ── Telefone formatting ──
+    dom.regTelefone.addEventListener('input', (e) => {
+        e.target.value = formatTelefone(e.target.value);
+    });
+
+    // ── CEP auto fetch ──
+    dom.regCep.addEventListener('input', (e) => {
+        let val = e.target.value.replace(/\D/g, '');
+        if (val.length > 8) val = val.slice(0, 8);
+        e.target.value = val;
+
+        clearTimeout(cepTimeout);
+
+        if (val.length === 8) {
+            cepTimeout = setTimeout(() => fetchAddress(val), 500);
+        } else {
+            if (val.length === 0) {
+                dom.regLogradouro.value = '';
+                dom.regBairro.value = '';
+                dom.regCidade.value = '';
+                dom.regEstado.value = '';
+            }
+        }
+    });
+
+    // ── Password strength ──
+    dom.regSenha.addEventListener('input', (e) => {
+        updatePasswordStrength(e.target.value);
+    });
+
+    // ── Register Form ──
+    dom.registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        dom.regError.classList.add('hidden');
+        dom.regSuccess.classList.add('hidden');
+
+        const nome = dom.regNome.value.trim();
+        const cpf = dom.regCpf.value.replace(/\D/g, '');
+        const telefone = dom.regTelefone.value.replace(/\D/g, '');
+        const email = dom.regEmail.value.trim();
+        const cep = dom.regCep.value.trim();
+        const senha = dom.regSenha.value;
+        const senhaConfirm = dom.regSenhaConfirm.value;
+
+        if (!nome || !cpf || !telefone || !email || !cep || !senha || !senhaConfirm) {
+            showRegError('Preencha todos os campos.');
+            return;
+        }
+
+        if (cpf.length !== 11) {
+            showRegError('CPF deve ter 11 dígitos.');
+            return;
+        }
+
+        if (senha !== senhaConfirm) {
+            showRegError('As senhas não conferem.');
+            return;
+        }
+
+        if (cep.length !== 8) {
+            showRegError('CEP deve ter 8 dígitos.');
+            return;
+        }
+
+        dom.regBtn.classList.add('loading');
+
+        try {
+            const data = await apiRequest('POST', '/api/auth/register', {
+                nome_completo: nome,
+                cpf,
+                telefone,
+                email,
+                cep,
+                senha,
+            });
+
+            dom.regSuccess.classList.remove('hidden');
+            dom.regSuccess.querySelector('.alert-text').textContent =
+                `Cadastro realizado com sucesso! Bem-vindo(a), ${data.nome_completo.split(' ')[0]}!`;
+
+            dom.registerForm.reset();
+            dom.strengthBars.forEach(b => b.className = 'strength-bar');
+            document.querySelectorAll('.password-requirements li').forEach(el => el.classList.remove('met'));
+
+            setTimeout(() => {
+                dom.regSuccess.classList.add('hidden');
+                showPage('login');
+                dom.loginEmail.value = email;
+                dom.loginSenha.value = '';
+            }, 2000);
+        } catch (err) {
+            showRegError(err.message);
+        } finally {
+            dom.regBtn.classList.remove('loading');
+        }
+    });
+
+    // ── Forgot Password Form ──
+    dom.forgotForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        dom.forgotError.classList.add('hidden');
+        dom.forgotSuccess.classList.add('hidden');
+
+        const email = dom.forgotEmail.value.trim();
+
+        if (!email) {
+            dom.forgotError.querySelector('.alert-text').textContent = 'Digite seu e-mail.';
+            dom.forgotError.classList.remove('hidden');
+            return;
+        }
+
+        dom.forgotBtn.classList.add('loading');
+
+        try {
+            const data = await apiRequest('POST', '/api/auth/forgot-password', { email });
+
+            // Mostrar o token na mensagem de sucesso (desenvolvimento)
+            const successMsg = data.token
+                ? `Token gerado! Copie o token abaixo para redefinir sua senha:\n\n${data.token}`
+                : data.mensagem;
+
+            dom.forgotSuccess.querySelector('.alert-text').textContent = successMsg;
+            dom.forgotSuccess.classList.remove('hidden');
+
+            // Se tiver token, limpa o form e mostra link para reset
+            if (data.token) {
+                dom.forgotEmail.value = '';
+                // Remove link antigo se existir para evitar duplicatas
+                const oldLink = dom.forgotSuccess.querySelector('.reset-nav-link');
+                if (oldLink) oldLink.remove();
+                // Adiciona botão para ir para a página de reset
+                const resetLink = document.createElement('div');
+                resetLink.className = 'reset-nav-link';
+                resetLink.style.marginTop = '1rem';
+                resetLink.innerHTML = '<a href="#" data-page="reset-password" class="btn btn-secondary btn-block" style="text-decoration:none;display:block;text-align:center;">Ir para Redefinir Senha</a>';
+                dom.forgotSuccess.appendChild(resetLink);
+            }
+        } catch (err) {
+            dom.forgotError.querySelector('.alert-text').textContent = err.message;
+            dom.forgotError.classList.remove('hidden');
+        } finally {
+            dom.forgotBtn.classList.remove('loading');
+        }
+    });
+
+    // ── Reset Password Form ──
+    dom.resetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        dom.resetError.classList.add('hidden');
+        dom.resetSuccess.classList.add('hidden');
+
+        const token = dom.resetToken.value.trim();
+        const novaSenha = dom.resetSenha.value;
+        const novaSenhaConfirm = dom.resetSenhaConfirm.value;
+
+        if (!token || !novaSenha || !novaSenhaConfirm) {
+            dom.resetError.querySelector('.alert-text').textContent = 'Preencha todos os campos.';
+            dom.resetError.classList.remove('hidden');
+            return;
+        }
+
+        if (novaSenha !== novaSenhaConfirm) {
+            dom.resetError.querySelector('.alert-text').textContent = 'As senhas não conferem.';
+            dom.resetError.classList.remove('hidden');
+            return;
+        }
+
+        if (novaSenha.length < 8) {
+            dom.resetError.querySelector('.alert-text').textContent = 'A senha deve ter no mínimo 8 caracteres.';
+            dom.resetError.classList.remove('hidden');
+            return;
+        }
+
+        dom.resetBtn.classList.add('loading');
+
+        try {
+            const data = await apiRequest('POST', '/api/auth/reset-password', {
+                token,
+                nova_senha: novaSenha,
+            });
+
+            dom.resetSuccess.querySelector('.alert-text').textContent = data.mensagem;
+            dom.resetSuccess.classList.remove('hidden');
+            dom.resetForm.reset();
+
+            // Redirecionar para o login após 2.5s
+            setTimeout(() => {
+                dom.resetSuccess.classList.add('hidden');
+                showPage('login');
+                showAlert('success', 'Senha redefinida! Faça login com sua nova senha.');
+            }, 2500);
+        } catch (err) {
+            dom.resetError.querySelector('.alert-text').textContent = err.message;
+            dom.resetError.classList.remove('hidden');
+        } finally {
+            dom.resetBtn.classList.remove('loading');
+        }
+    });
+
+    // ── Diet Form ──
+    dom.dietForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        dom.dietError.classList.add('hidden');
+
+        const nome = dom.dietNome.value.trim();
+        const sexo = dom.dietSexo.value;
+        const idade = parseInt(dom.dietIdade.value);
+        const peso = parseFloat(dom.dietPeso.value);
+        const altura = parseFloat(dom.dietAltura.value);
+
+        if (!nome || !sexo || !idade || !peso || !altura) {
+            showDietError('Preencha todos os dados do paciente.');
+            return;
+        }
+
+        const routines = [];
+        for (let i = 0; i < 3; i++) {
+            const nomeRotina = dom.routineNome[i]?.value.trim();
+            const atividade = dom.routineAtividade[i]?.value;
+            const objetivo = dom.routineObjetivo[i]?.value;
+            const alimentos = dom.routineAlimentos[i]?.value
+                .split(',')
+                .map(a => a.trim())
+                .filter(a => a.length > 0);
+
+            if (!nomeRotina || !atividade || !objetivo || alimentos.length === 0) {
+                showDietError(`Preencha todos os campos da Rotina ${i + 1}.`);
+                return;
+            }
+
+            routines.push({
+                nome: nomeRotina,
+                nivel_atividade: atividade,
+                objetivo: objetivo,
+                alimentos_preferidos: alimentos,
+            });
+        }
+
+        const requestBody = {
+            paciente: {
+                nome,
+                sexo,
+                idade,
+                peso_kg: peso,
+                altura_cm: altura,
+            },
+            rotinas: routines,
+        };
+
+        dom.dietBtn.classList.add('loading');
+        showLoading('Gerando planos alimentares...');
+
+        try {
+            const result = await apiRequest('POST', '/api/diet/generate', requestBody);
+            state.dietResult = result;
+            renderResults(result);
+            showPage('results');
+        } catch (err) {
+            hideLoading();
+            showDietError(err.message);
+        } finally {
+            dom.dietBtn.classList.remove('loading');
+        }
+    });
+
+    // ── Navigation Links ──
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('[data-page]');
+        if (link) {
+            e.preventDefault();
+            const page = link.dataset.page;
+            if (page === 'logout') {
+                logout();
+            } else {
+                showPage(page);
+            }
+        }
+    });
+
+    // ── Logout Button ──
+    dom.btnLogout.addEventListener('click', logout);
+
+    // ── New Diet Button ──
+    dom.btnNewDiet.addEventListener('click', () => {
+        showPage('diet');
+        dom.dietForm.reset();
+        initializeRoutines();
+    });
+
+    // ── Clear field errors on input ──
+    document.querySelectorAll('.form-input, .form-select').forEach(el => {
+        el.addEventListener('input', () => {
+            el.classList.remove('error');
+            const parent = el.closest('.form-group');
+            if (parent) {
+                const errorEl = parent.querySelector('.form-error');
+                if (errorEl) errorEl.textContent = '';
+            }
+        });
+    });
+
+    // ── Show login page by default ──
+    showPage('login');
+});

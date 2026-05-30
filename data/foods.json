@@ -1,0 +1,112 @@
+{
+  "categorias": [
+    {
+      "nome": "Carnes e Peixes",
+      "alimentos": [
+        { "nome": "Peito de Frango Grelhado", "proteina_g": 31.0, "carboidrato_g": 0.0, "gordura_g": 3.6, "calorias_kcal": 165 },
+        { "nome": "Coxa de Frango Assada", "proteina_g": 25.0, "carboidrato_g": 0.0, "gordura_g": 8.0, "calorias_kcal": 177 },
+        { "nome": "Carne Moída Magra", "proteina_g": 25.0, "carboidrato_g": 0.0, "gordura_g": 7.0, "calorias_kcal": 170 },
+        { "nome": "Filé Mignon", "proteina_g": 28.0, "carboidrato_g": 0.0, "gordura_g": 5.0, "calorias_kcal": 160 },
+        { "nome": "Costela Bovina", "proteina_g": 20.0, "carboidrato_g": 0.0, "gordura_g": 22.0, "calorias_kcal": 280 },
+        { "nome": "Salmão Grelhado", "proteina_g": 25.0, "carboidrato_g": 0.0, "gordura_g": 13.0, "calorias_kcal": 220 },
+        { "nome": "Atum em Lata (água)", "proteina_g": 26.0, "carboidrato_g": 0.0, "gordura_g": 1.0, "calorias_kcal": 115 },
+        { "nome": "Tilápia Grelhada", "proteina_g": 26.0, "carboidrato_g": 0.0, "gordura_g": 1.5, "calorias_kcal": 120 },
+        { "nome": "Ovo Cozido", "proteina_g": 13.0, "carboidrato_g": 1.0, "gordura_g": 11.0, "calorias_kcal": 155 },
+        { "nome": "Ovo Mexido", "proteina_g": 13.0, "carboidrato_g": 1.0, "gordura_g": 11.0, "calorias_kcal": 155 },
+        { "nome": "Lombo Suíno", "proteina_g": 26.0, "carboidrato_g": 0.0, "gordura_g": 7.0, "calorias_kcal": 170 },
+        { "nome": "Camarão Cozido", "proteina_g": 24.0, "carboidrato_g": 0.5, "gordura_g": 1.0, "calorias_kcal": 110 }
+      ]
+    },
+    {
+      "nome": "Grãos e Cereais",
+      "alimentos": [
+        { "nome": "Arroz Branco Cozido", "proteina_g": 2.5, "carboidrato_g": 28.0, "gordura_g": 0.3, "calorias_kcal": 130 },
+        { "nome": "Arroz Integral Cozido", "proteina_g": 2.7, "carboidrato_g": 26.0, "gordura_g": 0.8, "calorias_kcal": 124 },
+        { "nome": "Batata Doce Cozida", "proteina_g": 1.6, "carboidrato_g": 20.0, "gordura_g": 0.1, "calorias_kcal": 86 },
+        { "nome": "Batata Inglesa Cozida", "proteina_g": 2.0, "carboidrato_g": 17.0, "gordura_g": 0.1, "calorias_kcal": 77 },
+        { "nome": "Quinoa Cozida", "proteina_g": 4.4, "carboidrato_g": 21.3, "gordura_g": 1.9, "calorias_kcal": 120 },
+        { "nome": "Aveia em Flocos", "proteina_g": 13.5, "carboidrato_g": 66.3, "gordura_g": 6.5, "calorias_kcal": 379 },
+        { "nome": "Pão Integral", "proteina_g": 9.0, "carboidrato_g": 49.0, "gordura_g": 3.0, "calorias_kcal": 265 },
+        { "nome": "Pão Francês", "proteina_g": 8.0, "carboidrato_g": 58.0, "gordura_g": 3.0, "calorias_kcal": 300 },
+        { "nome": "Macarrão Cozido", "proteina_g": 5.0, "carboidrato_g": 25.0, "gordura_g": 1.0, "calorias_kcal": 131 },
+        { "nome": "Cuscuz Paulista", "proteina_g": 3.5, "carboidrato_g": 22.0, "gordura_g": 2.0, "calorias_kcal": 120 }
+      ]
+    },
+    {
+      "nome": "Leguminosas",
+      "alimentos": [
+        { "nome": "Feijão Preto Cozido", "proteina_g": 4.5, "carboidrato_g": 14.0, "gordura_g": 0.5, "calorias_kcal": 77 },
+        { "nome": "Feijão Carioca Cozido", "proteina_g": 4.8, "carboidrato_g": 13.6, "gordura_g": 0.5, "calorias_kcal": 76 },
+        { "nome": "Lentilha Cozida", "proteina_g": 9.0, "carboidrato_g": 20.0, "gordura_g": 0.4, "calorias_kcal": 116 },
+        { "nome": "Grão de Bico Cozido", "proteina_g": 8.9, "carboidrato_g": 27.4, "gordura_g": 2.6, "calorias_kcal": 164 },
+        { "nome": "Ervilha Cozida", "proteina_g": 5.4, "carboidrato_g": 15.6, "gordura_g": 0.4, "calorias_kcal": 84 },
+        { "nome": "Soja Cozida", "proteina_g": 16.6, "carboidrato_g": 9.9, "gordura_g": 8.5, "calorias_kcal": 173 }
+      ]
+    },
+    {
+      "nome": "Laticínios",
+      "alimentos": [
+        { "nome": "Leite Integral", "proteina_g": 3.0, "carboidrato_g": 5.0, "gordura_g": 3.0, "calorias_kcal": 60 },
+        { "nome": "Leite Desnatado", "proteina_g": 3.5, "carboidrato_g": 5.0, "gordura_g": 0.5, "calorias_kcal": 35 },
+        { "nome": "Iogurte Natural", "proteina_g": 4.0, "carboidrato_g": 5.0, "gordura_g": 3.0, "calorias_kcal": 63 },
+        { "nome": "Iogurte Grego", "proteina_g": 9.0, "carboidrato_g": 4.0, "gordura_g": 5.0, "calorias_kcal": 97 },
+        { "nome": "Queijo Mussarela", "proteina_g": 25.0, "carboidrato_g": 2.0, "gordura_g": 22.0, "calorias_kcal": 310 },
+        { "nome": "Queijo Cottage", "proteina_g": 11.0, "carboidrato_g": 3.0, "gordura_g": 4.0, "calorias_kcal": 92 },
+        { "nome": "Queijo Minas Frescal", "proteina_g": 17.0, "carboidrato_g": 3.0, "gordura_g": 12.0, "calorias_kcal": 190 },
+        { "nome": "Requeijão Cremoso", "proteina_g": 8.0, "carboidrato_g": 2.0, "gordura_g": 23.0, "calorias_kcal": 250 }
+      ]
+    },
+    {
+      "nome": "Frutas",
+      "alimentos": [
+        { "nome": "Banana", "proteina_g": 1.3, "carboidrato_g": 22.0, "gordura_g": 0.3, "calorias_kcal": 98 },
+        { "nome": "Maçã", "proteina_g": 0.3, "carboidrato_g": 14.0, "gordura_g": 0.2, "calorias_kcal": 56 },
+        { "nome": "Laranja", "proteina_g": 1.0, "carboidrato_g": 11.0, "gordura_g": 0.1, "calorias_kcal": 46 },
+        { "nome": "Abacate", "proteina_g": 2.0, "carboidrato_g": 4.0, "gordura_g": 15.0, "calorias_kcal": 160 },
+        { "nome": "Mamão", "proteina_g": 0.5, "carboidrato_g": 11.0, "gordura_g": 0.1, "calorias_kcal": 45 },
+        { "nome": "Melancia", "proteina_g": 0.6, "carboidrato_g": 8.0, "gordura_g": 0.2, "calorias_kcal": 32 },
+        { "nome": "Uva", "proteina_g": 0.7, "carboidrato_g": 17.0, "gordura_g": 0.2, "calorias_kcal": 69 },
+        { "nome": "Morango", "proteina_g": 0.7, "carboidrato_g": 7.7, "gordura_g": 0.3, "calorias_kcal": 32 },
+        { "nome": "Manga", "proteina_g": 0.5, "carboidrato_g": 15.0, "gordura_g": 0.3, "calorias_kcal": 60 },
+        { "nome": "Abacaxi", "proteina_g": 0.5, "carboidrato_g": 13.0, "gordura_g": 0.1, "calorias_kcal": 50 }
+      ]
+    },
+    {
+      "nome": "Vegetais",
+      "alimentos": [
+        { "nome": "Brócolis Cozido", "proteina_g": 2.8, "carboidrato_g": 7.0, "gordura_g": 0.4, "calorias_kcal": 35 },
+        { "nome": "Espinafre Cozido", "proteina_g": 2.9, "carboidrato_g": 3.6, "gordura_g": 0.4, "calorias_kcal": 23 },
+        { "nome": "Alface", "proteina_g": 1.4, "carboidrato_g": 2.9, "gordura_g": 0.2, "calorias_kcal": 15 },
+        { "nome": "Couve Refogada", "proteina_g": 2.0, "carboidrato_g": 6.0, "gordura_g": 2.5, "calorias_kcal": 50 },
+        { "nome": "Tomate", "proteina_g": 0.9, "carboidrato_g": 3.9, "gordura_g": 0.2, "calorias_kcal": 18 },
+        { "nome": "Cenoura Crua", "proteina_g": 1.0, "carboidrato_g": 10.0, "gordura_g": 0.2, "calorias_kcal": 41 },
+        { "nome": "Abobrinha Cozida", "proteina_g": 1.2, "carboidrato_g": 3.1, "gordura_g": 0.3, "calorias_kcal": 16 },
+        { "nome": "Berinjela Cozida", "proteina_g": 1.0, "carboidrato_g": 6.0, "gordura_g": 0.2, "calorias_kcal": 25 },
+        { "nome": "Pepino", "proteina_g": 0.7, "carboidrato_g": 3.6, "gordura_g": 0.1, "calorias_kcal": 14 },
+        { "nome": "Couve-flor Cozida", "proteina_g": 1.8, "carboidrato_g": 5.0, "gordura_g": 0.3, "calorias_kcal": 24 }
+      ]
+    },
+    {
+      "nome": "Gorduras e Oleaginosas",
+      "alimentos": [
+        { "nome": "Azeite de Oliva", "proteina_g": 0.0, "carboidrato_g": 0.0, "gordura_g": 100.0, "calorias_kcal": 884 },
+        { "nome": "Manteiga", "proteina_g": 0.5, "carboidrato_g": 0.1, "gordura_g": 81.0, "calorias_kcal": 717 },
+        { "nome": "Amendoim Torrado", "proteina_g": 25.8, "carboidrato_g": 16.1, "gordura_g": 49.2, "calorias_kcal": 599 },
+        { "nome": "Castanha de Caju", "proteina_g": 18.0, "carboidrato_g": 30.0, "gordura_g": 44.0, "calorias_kcal": 554 },
+        { "nome": "Amêndoa", "proteina_g": 21.0, "carboidrato_g": 22.0, "gordura_g": 50.0, "calorias_kcal": 578 },
+        { "nome": "Nozes", "proteina_g": 15.0, "carboidrato_g": 14.0, "gordura_g": 65.0, "calorias_kcal": 654 },
+        { "nome": "Pasta de Amendoim", "proteina_g": 25.0, "carboidrato_g": 20.0, "gordura_g": 50.0, "calorias_kcal": 588 }
+      ]
+    },
+    {
+      "nome": "Bebidas",
+      "alimentos": [
+        { "nome": "Água", "proteina_g": 0.0, "carboidrato_g": 0.0, "gordura_g": 0.0, "calorias_kcal": 0 },
+        { "nome": "Café Preto", "proteina_g": 0.1, "carboidrato_g": 0.0, "gordura_g": 0.0, "calorias_kcal": 1 },
+        { "nome": "Chá Verde", "proteina_g": 0.0, "carboidrato_g": 0.0, "gordura_g": 0.0, "calorias_kcal": 1 },
+        { "nome": "Suco de Laranja Natural", "proteina_g": 0.7, "carboidrato_g": 11.0, "gordura_g": 0.2, "calorias_kcal": 45 },
+        { "nome": "Leite de Amêndoas", "proteina_g": 0.6, "carboidrato_g": 0.5, "gordura_g": 2.5, "calorias_kcal": 24 }
+      ]
+    }
+  ]
+}
