@@ -25,7 +25,7 @@ from app.excecoes import (
     PlanValidationError,
     ValorFisiologicoInvalidoError,
 )
-from app.models.esquemas import TextGenerateRequest, DietGenerateResponseV2
+from app.models.esquemas import DietGenerateRequestV2, DietGenerateResponseV2
 from app.use_cases.gerar_planos import GerarPlanosUseCase
 
 logger = logging.getLogger(__name__)
@@ -76,45 +76,37 @@ def _sanitizar_texto(texto: str) -> str:
 # ═══════════════════════════════════════════════════════════
 
 @router.post("/generate", response_model=DietGenerateResponseV2)
-def generate_diet(request: TextGenerateRequest):
-    """Gera 3 planos alimentares personalizados a partir de texto livre.
+def generate_diet(request: DietGenerateRequestV2):
+    """Gera 3 planos alimentares personalizados com dados do formulário + rotina.
 
-    Fluxo (SPEC-006 + SPEC-007):
-    1. Sanitiza o texto de entrada
-    2. Extrai perfil do usuário via IA (DeepSeek)
-    3. Calcula TMB, GET e distribuição de macros
-    4. Gera 3 planos distintos via IA
-    5. Valida e corrige automaticamente
-    6. Gera PDF consolidado
-    7. Retorna planos + URL do PDF
-
-    Args:
-        request: TextGenerateRequest com campo 'texto' (20-2000 caracteres).
-
-    Returns:
-        DietGenerateResponseV2 com paciente, TMB, GET, 3 planos, pdf_url.
+    Fluxo:
+    1. Recebe dados estruturados (sexo, idade, peso, altura, atividade)
+    2. Recebe texto livre com rotina, objetivos, preferências
+    3. Extrai preferências/restrições do texto via IA
+    4. Calcula TMB, GET e distribuição de macros
+    5. Gera 3 planos distintos via IA
+    6. Valida e corrige automaticamente
+    7. Gera PDF consolidado
     """
-    # 1. Sanitizar input
+    # Sanitizar texto
     texto = _sanitizar_texto(request.texto)
 
-    # 2. Validar comprimento pós-sanitização
-    if len(texto) < 20:
+    if len(texto) < 10:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "O texto é muito curto após sanitização (mínimo 20 caracteres). "
-                "Inclua mais detalhes como idade, peso, altura, sexo e rotina."
-            ),
-        )
-    if len(texto) > 2000:
-        raise HTTPException(
-            status_code=400,
-            detail="O texto excede o limite de 2000 caracteres.",
+            detail="Descreva sua rotina, objetivos e preferências (mínimo 10 caracteres).",
         )
 
-    # 3. Executar caso de uso
+    # Executar caso de uso com dados estruturados + texto
     try:
-        resultado = _use_case.executar(texto)
+        resultado = _use_case.executar_com_dados(
+            sexo=request.sexo,
+            idade=request.idade,
+            peso_kg=request.peso_kg,
+            altura_cm=request.altura_cm,
+            nivel_atividade=request.nivel_atividade,
+            texto=texto,
+        )
     except CamposObrigatoriosAusentesError as e:
         campos = ", ".join(e.campos_faltantes)
         raise HTTPException(

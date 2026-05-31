@@ -291,15 +291,24 @@ class ValidationResult(BaseModel):
     aprovado: bool = Field(..., description="True se os planos passaram em todas as validações")
 
 
-# ─── SPEC-007: Endpoint de Geração (texto livre) ────────
+# ─── SPEC-007: Endpoint de Geração (formulário + texto) ──
 
-class TextGenerateRequest(BaseModel):
-    """Requisição de geração de planos via texto livre."""
+class DietGenerateRequestV2(BaseModel):
+    """Requisição de geração com dados estruturados + descrição da rotina."""
+    sexo: Literal["masculino", "feminino"] = Field(
+        ..., description="Sexo biológico"
+    )
+    idade: int = Field(..., ge=1, le=120, description="Idade em anos")
+    peso_kg: float = Field(..., ge=20, le=500, description="Peso em quilogramas")
+    altura_cm: float = Field(..., ge=50, le=280, description="Altura em centímetros")
+    nivel_atividade: Literal["sedentario", "moderado", "ativo"] = Field(
+        ..., description="Nível de atividade física"
+    )
     texto: str = Field(
         ...,
-        min_length=20,
-        max_length=2000,
-        description="Descrição em linguagem natural da rotina, objetivos e preferências",
+        min_length=10,
+        max_length=1500,
+        description="Descrição da rotina, objetivos, preferências e restrições",
     )
 
 

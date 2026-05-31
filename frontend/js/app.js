@@ -74,7 +74,12 @@ function cacheDom() {
     dom.strengthBars = $$('.strength-bar');
     dom.pwdReqs = $$('.password-requirements li');
 
-    // Diet form (SPEC-009: textarea-based)
+    // Diet form (SPEC-009: formulário + textarea)
+    dom.dietSexo = $('#diet-sexo');
+    dom.dietIdade = $('#diet-idade');
+    dom.dietPeso = $('#diet-peso');
+    dom.dietAltura = $('#diet-altura');
+    dom.dietAtividade = $('#diet-atividade');
     dom.dietTextarea = $('#diet-texto');
     dom.dietBtn = $('#diet-btn');
     dom.dietError = $('#diet-error');
@@ -83,12 +88,6 @@ function cacheDom() {
     dom.exampleText = $('#diet-example-text');
     dom.exampleBtn = $('#diet-example-btn');
     dom.exampleDots = $('#diet-example-dots');
-
-    // Routine fields
-    dom.routineNome = $$('.routine-nome');
-    dom.routineAtividade = $$('.routine-atividade');
-    dom.routineObjetivo = $$('.routine-objetivo');
-    dom.routineAlimentos = $$('.routine-alimentos');
 
     // Header
     dom.headerUser = $('#header-user');
@@ -963,30 +962,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ── Diet Textarea + Examples (SPEC-009) ──
+    // ── Diet Form + Examples ──
 
-    // Exemplos rotativos
+    // Exemplos rotativos (apenas rotina, dados vêm do formulário)
     const DIET_EXAMPLES = [
-        {
-            text: 'Trabalho sentado o dia todo, faço musculação 4x por semana. Quero ganhar massa. Tenho 1,75m, 72kg e 28 anos. Gosto de frango, batata doce, ovo e banana. Não como peixe.',
-            label: 'Atleta — Ganho de Massa',
-        },
-        {
-            text: 'Sou vegetariano, corro 3x por semana, quero perder uns quilinhos. Tenho 1,65m, 78kg, 35 anos. Adoro salada, grão de bico, tofu e frutas.',
-            label: 'Vegetariano — Perda de Peso',
-        },
-        {
-            text: 'Cuido da casa e das crianças, não sobra tempo pra academia. Ando bastante a pé. Quero só me alimentar melhor. Tenho 1,60m, 62kg, 42 anos. Gosto de arroz, feijão, carne moída e legumes.',
-            label: 'Rotina Caseira — Saúde',
-        },
-        {
-            text: 'Sou estagiário, almoço no bandejão, janto em casa. Faço academia 5x por semana e quero definição. 1,80m, 85kg, 22 anos. Curto frango grelhado, whey, aveia e pasta de amendoim.',
-            label: 'Universitário — Definição',
-        },
-        {
-            text: 'Estou grávida de 5 meses, meu médico pediu pra eu me alimentar melhor. Não tenho restrições específicas. 1,68m, 70kg, 31 anos. Gosto de frutas, iogurte, peixe e legumes.',
-            label: 'Gestante — Nutrição',
-        },
+        'Trabalho sentado o dia todo, faço musculação 4x por semana. Quero ganhar massa. Gosto de frango, batata doce, ovo e banana. Não como peixe.',
+        'Sou vegetariano, corro 3x por semana, quero perder uns quilinhos. Adoro salada, grão de bico, tofu e frutas.',
+        'Cuido da casa e das crianças, não sobra tempo pra academia. Quero só me alimentar melhor. Gosto de arroz, feijão, carne moída e legumes.',
+        'Sou estagiário, almoço no bandejão, janto em casa. Quero definição. Curto frango grelhado, whey, aveia e pasta de amendoim.',
+        'Estou grávida de 5 meses, meu médico pediu pra eu me alimentar melhor. Gosto de frutas, iogurte, peixe e legumes.',
     ];
 
     let _exampleIndex = 0;
@@ -1011,7 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function _showExample(index) {
         if (!dom.exampleText || !dom.exampleDots) return;
-        dom.exampleText.textContent = DIET_EXAMPLES[index].text;
+        dom.exampleText.textContent = DIET_EXAMPLES[index];
         const dots = dom.exampleDots.querySelectorAll('.diet-example-dot');
         dots.forEach((d, i) => {
             d.classList.toggle('active', i === index);
@@ -1041,34 +1025,54 @@ document.addEventListener('DOMContentLoaded', () => {
     // Botão "Usar este exemplo"
     if (dom.exampleBtn) {
         dom.exampleBtn.addEventListener('click', () => {
-            dom.dietTextarea.value = DIET_EXAMPLES[_exampleIndex].text;
+            dom.dietTextarea.value = DIET_EXAMPLES[_exampleIndex];
             _updateCharCounter();
         });
     }
 
-    // Contador de caracteres + habilitar/desabilitar botão
+    // Contador de caracteres + validação do formulário
     function _updateCharCounter() {
         const len = dom.dietTextarea.value.length;
-        dom.dietCharCounter.textContent = `${len}/2000`;
+        dom.dietCharCounter.textContent = `${len}/1500`;
         dom.dietCharCounter.classList.remove('valid', 'invalid');
-        if (len >= 20) {
-            dom.dietCharCounter.classList.add('valid');
-            dom.dietBtn.disabled = false;
-        } else {
-            dom.dietCharCounter.classList.add('invalid');
-            dom.dietBtn.disabled = true;
-        }
+        _validateForm();
+    }
+
+    function _validateForm() {
+        const sexo = dom.dietSexo?.value;
+        const idade = dom.dietIdade?.value;
+        const peso = dom.dietPeso?.value;
+        const altura = dom.dietAltura?.value;
+        const atividade = dom.dietAtividade?.value;
+        const texto = dom.dietTextarea?.value.trim();
+
+        const formOk = sexo && idade && peso && altura && atividade;
+        const textoOk = texto.length >= 10;
+
+        dom.dietBtn.disabled = !(formOk && textoOk);
+        dom.dietCharCounter.classList.add(textoOk ? 'valid' : 'invalid');
     }
 
     if (dom.dietTextarea) {
         dom.dietTextarea.addEventListener('input', _updateCharCounter);
     }
+    // Validar formulário ao alterar qualquer campo
+    [dom.dietSexo, dom.dietIdade, dom.dietPeso, dom.dietAltura, dom.dietAtividade].forEach(el => {
+        if (el) el.addEventListener('change', _validateForm);
+        if (el && el.tagName === 'INPUT') el.addEventListener('input', _validateForm);
+    });
 
     // Handler do botão Gerar Planos
     if (dom.dietBtn) {
         dom.dietBtn.addEventListener('click', async () => {
+            const sexo = dom.dietSexo.value;
+            const idade = parseInt(dom.dietIdade.value);
+            const peso_kg = parseFloat(dom.dietPeso.value);
+            const altura_cm = parseFloat(dom.dietAltura.value);
+            const nivel_atividade = dom.dietAtividade.value;
             const texto = dom.dietTextarea.value.trim();
-            if (texto.length < 20) return;
+
+            if (!sexo || !idade || !peso_kg || !altura_cm || !nivel_atividade || texto.length < 10) return;
 
             dom.dietError.classList.add('hidden');
             dom.dietBtn.classList.add('loading');
@@ -1076,14 +1080,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Sanitização leve client-side
             const sanitized = texto
-                .replace(/<[^>]*>/g, '')        // remove HTML tags
-                .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')  // remove control chars
-                .replace(/\s+/g, ' ')           // normalize spaces
+                .replace(/<[^>]*>/g, '')
+                .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')
+                .replace(/\s+/g, ' ')
                 .trim();
+
+            const requestBody = {
+                sexo,
+                idade,
+                peso_kg,
+                altura_cm,
+                nivel_atividade,
+                texto: sanitized,
+            };
 
             // Loading com estágios dinâmicos
             const stages = [
-                'Analisando sua descrição...',
+                'Analisando sua rotina...',
                 'Calculando seu metabolismo...',
                 'Gerando 3 planos com IA...',
                 'Montando seu PDF...',
@@ -1096,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 6000);
 
             try {
-                const result = await apiRequest('POST', '/api/diet/generate', { texto: sanitized });
+                const result = await apiRequest('POST', '/api/diet/generate', requestBody);
                 clearInterval(stageInterval);
                 state.dietResult = result;
                 renderResults(result);
@@ -1140,6 +1153,11 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.btnNewDiet.addEventListener('click', () => {
         showPage('diet');
         dom.dietTextarea.value = '';
+        dom.dietSexo.value = '';
+        dom.dietIdade.value = '';
+        dom.dietPeso.value = '';
+        dom.dietAltura.value = '';
+        dom.dietAtividade.value = '';
         _updateCharCounter();
     });
 

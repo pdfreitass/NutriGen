@@ -416,14 +416,13 @@
             <div class="text-center" style="margin-bottom: 1.5rem;">
                 <h1 class="page-title">&#x1F372; Gerar Planos Alimentares</h1>
                 <p class="page-subtitle">
-                    Descreva sua rotina em linguagem natural e receba 3 planos distintos em segundos
+                    Preencha seus dados e descreva sua rotina para receber 3 planos
                 </p>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">&#x270D;&#xFE0F; Descreva sua rotina</h2>
-                    <p class="card-subtitle">Quanto mais detalhes, melhores os planos!</p>
+                    <h2 class="card-title">&#x1F9D1; Seus Dados</h2>
                 </div>
 
                 <div id="diet-error" class="alert alert-error hidden">
@@ -432,22 +431,63 @@
                     <button class="alert-retry hidden" id="diet-retry-btn">&#x1F504; Tentar Novamente</button>
                 </div>
 
-                <div class="diet-textarea-wrapper">
-                    <textarea
-                        id="diet-texto"
-                        class="diet-textarea"
-                        placeholder="Descreva sua rotina, objetivos e preferências alimentares...&#10;&#10;Ex: 'Trabalho sentado, faço musculação 4x por semana. Quero ganhar massa. Tenho 1,75m, 72kg, 28 anos. Gosto de frango, batata doce, ovos. Não como peixe.'"
-                        maxlength="2000"
-                        rows="6"
-                    ></textarea>
-                    <div class="diet-textarea-footer">
-                        <span class="diet-char-counter" id="diet-char-counter">0/2000</span>
+                <!-- Formulário de dados -->
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="diet-sexo">Sexo <span class="required">*</span></label>
+                        <select id="diet-sexo" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            <option value="masculino">Masculino</option>
+                            <option value="feminino">Feminino</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="diet-idade">Idade <span class="required">*</span></label>
+                        <input type="number" id="diet-idade" class="form-input" placeholder="Ex: 30" required min="1" max="120">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="diet-peso">Peso (kg) <span class="required">*</span></label>
+                        <input type="number" id="diet-peso" class="form-input" placeholder="Ex: 75.5" required min="20" max="500" step="0.1">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="diet-altura">Altura (cm) <span class="required">*</span></label>
+                        <input type="number" id="diet-altura" class="form-input" placeholder="Ex: 175" required min="50" max="280">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="diet-atividade">Atividade Física <span class="required">*</span></label>
+                        <select id="diet-atividade" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            <option value="sedentario">Sedentário (pouco ou nenhum exercício)</option>
+                            <option value="moderado">Moderado (2-4x por semana)</option>
+                            <option value="ativo">Ativo (5-7x por semana)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Textarea da rotina -->
+                <div style="margin-top: 1.5rem;">
+                    <label class="form-label">Descreva sua rotina, objetivos e preferências <span class="required">*</span></label>
+                    <div class="diet-textarea-wrapper">
+                        <textarea
+                            id="diet-texto"
+                            class="diet-textarea"
+                            placeholder="Ex: Trabalho sentado o dia todo. Quero ganhar massa muscular. Gosto de frango, batata doce, ovos e banana. Não como peixe."
+                            maxlength="1500"
+                            rows="4"
+                        ></textarea>
+                        <div class="diet-textarea-footer">
+                            <span class="diet-char-counter" id="diet-char-counter">0/1500</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Exemplos rotativos -->
                 <div class="diet-examples" id="diet-examples">
-                    <p class="diet-examples-label">&#x1F4A1; Exemplos para inspirar:</p>
+                    <p class="diet-examples-label">&#x1F4A1; Exemplos de rotina:</p>
                     <div class="diet-example-card" id="diet-example-card">
                         <p class="diet-example-text" id="diet-example-text"></p>
                         <button class="btn btn-sm btn-outline" id="diet-example-btn">
