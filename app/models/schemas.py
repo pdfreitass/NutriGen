@@ -289,3 +289,26 @@ class ValidationResult(BaseModel):
         description="Lista de correções aplicadas (para log, não exibidas ao usuário)",
     )
     aprovado: bool = Field(..., description="True se os planos passaram em todas as validações")
+
+
+# ─── SPEC-007: Endpoint de Geração (texto livre) ────────
+
+class TextGenerateRequest(BaseModel):
+    """Requisição de geração de planos via texto livre."""
+    texto: str = Field(
+        ...,
+        min_length=20,
+        max_length=2000,
+        description="Descrição em linguagem natural da rotina, objetivos e preferências",
+    )
+
+
+class DietGenerateResponseV2(BaseModel):
+    """Resposta da geração de planos (schema SPEC-007)."""
+    paciente: dict = Field(..., description="Dados do paciente extraídos")
+    tmb: float = Field(..., description="Taxa Metabólica Basal em kcal")
+    get_calorico: float = Field(..., description="Gasto Energético Total em kcal")
+    objetivo: str = Field(..., description="Objetivo inferido da dieta")
+    planos: list = Field(..., description="3 planos alimentares gerados")
+    pdf_url: Optional[str] = Field(None, description="URL para download do PDF")
+    request_id: str = Field(..., description="UUID da requisição para suporte")

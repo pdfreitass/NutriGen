@@ -1,13 +1,15 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 from app.database import criar_tabelas, fechar_conexao
 from app.routers.diet import router as diet_router
 from app.routers.auth import router as auth_router
+from app.middleware.rate_limit import rate_limit_middleware
 
 
 @asynccontextmanager
@@ -37,6 +39,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Rate limiting (específico para /api/diet/generate)
+@app.middleware("http")
+async def rate_limit_handler(request: Request, call_next):
+    """Aplica rate limiting antes de processar a requisição."""
+    from fastapi import HTTPException
+    try:
+        await rate_limit_middleware(request)
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"detail": e.detail},
+            headers=getattr(e, "headers", None),
+        )
+    return await call_next(request)
 
 # ⚠️ ORDEM CRÍTICA: Routers DEVEM ser registrados ANTES do StaticFiles mount
 # O mount em "/" com html=True captura qualquer rota não tratada (SPA fallback).

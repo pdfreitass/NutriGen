@@ -13,14 +13,14 @@
 | Métrica | Valor |
 |---------|:----:|
 | Total de SPECs | **25** |
-| Concluídas | **6** |
+| Concluídas | **7** |
 | Parciais | **3** |
 | Em andamento | **0** |
-| Pendentes | **16** |
-| Progresso Geral | **46%** |
+| Pendentes | **15** |
+| Progresso Geral | **53%** |
 
 ```
-Progresso: [███████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 46%
+Progresso: [███████████████████████████░░░░░░░░░░░░░░░░░░░░░░░] 53%
 ```
 
 ---
@@ -37,7 +37,7 @@ Progresso: [██████████████████████�
 | [SPEC-004](SPEC-004-geracao-planos-ia.md) | Serviço de Geração de Planos via IA | ✅ Concluído |
 | [SPEC-005](SPEC-005-pipeline-validacao.md) | Pipeline de Validação Pós-Geração | ✅ Concluído |
 | [SPEC-006](SPEC-006-orquestrador.md) | Atualização do Orquestrador (DietPlannerUseCase) | ✅ Concluído |
-| [SPEC-007](SPEC-007-endpoint-geracao.md) | Atualização do Endpoint de Geração | 🔴 Pendente |
+| [SPEC-007](SPEC-007-endpoint-geracao.md) | Atualização do Endpoint de Geração | ✅ Concluído |
 | [SPEC-008](SPEC-008-expansao-restricoes.md) | Expansão de Restrições e Condições Especiais | 🟡 Parcial |
 | [SPEC-009](SPEC-009-frontend-input.md) | Frontend — Página de Input com Linguagem Natural | 🔴 Pendente |
 | [SPEC-010](SPEC-010-frontend-resultados.md) | Frontend — Tela de Resultados com 3 Planos | 🔴 Pendente |
