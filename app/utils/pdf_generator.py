@@ -219,3 +219,93 @@ def gerar_pdf(resultado: DietGenerateResponse) -> str:
     doc.build(elementos)
 
     return nome_arquivo
+
+
+# ─── Adaptador para PlanosGerados (SPEC-006) ─────────────
+
+def gerar_pdf_adaptado(
+    planos_gerados,
+    perfil_extraido,
+    metas_nutricionais,
+) -> str:
+    """Gera PDF a partir dos novos schemas PlanosGerados + PerfilExtraido.
+
+    Adapta o novo formato pós-SPEC-004/005 para o gerador de PDF existente,
+    que espera o schema antigo DietGenerateResponse. Constrói um objeto
+    compatível temporário para reutilizar a lógica de renderização.
+
+    Args:
+        planos_gerados: PlanosGerados com 3 planos validados.
+        perfil_extraido: PerfilExtraido com dados do usuário.
+        metas_nutricionais: MetasNutricionais com TMB, GET, macros.
+
+    Returns:
+        Nome do arquivo PDF gerado (UUID.pdf).
+    """
+    from app.models.schemas import (
+        DietGenerateResponse,
+        PatientData,
+        PlanoAlimentar,
+        MacrosGramas,
+        AlimentoPlano,
+        Refeicao,
+    )
+
+    p = perfil_extraido.perfil
+
+    paciente = PatientData(
+        nome="Paciente",
+        sexo=p.sexo or "masculino",
+        idade=p.idade or 30,
+        peso_kg=p.peso_kg or 70.0,
+        altura_cm=p.altura_cm or 170.0,
+    )
+
+    planos_alimentares = []
+    for plano in planos_gerados.planos:
+        refeicoes = []
+        for ref in plano.refeicoes:
+            alimentos = []
+            for item in ref.alimentos:
+                alimentos.append(AlimentoPlano(
+                    nome=item.nome,
+                    quantidade_g=item.quantidade_g,
+                    proteina_g=item.proteina_g,
+                    carboidrato_g=item.carboidrato_g,
+                    gordura_g=item.gordura_g,
+                    calorias_kcal=item.calorias_kcal,
+                ))
+            refeicoes.append(Refeicao(nome=ref.nome, alimentos=alimentos))
+
+        # Calcular totais para o plano
+        proteina_total = sum(
+            sum(a.proteina_g for a in r.alimentos) for r in refeicoes
+        )
+        carbo_total = sum(
+            sum(a.carboidrato_g for a in r.alimentos) for r in refeicoes
+        )
+        gordura_total = sum(
+            sum(a.gordura_g for a in r.alimentos) for r in refeicoes
+        )
+
+        planos_alimentares.append(PlanoAlimentar(
+            nome=plano.nome,
+            nivel_atividade=perfil_extraido.rotina.nivel_atividade or "moderado",
+            objetivo=plano.objetivo,
+            get_calorico=plano.calorias_estimadas,
+            macros=MacrosGramas(
+                proteina_g=round(proteina_total, 1),
+                carboidrato_g=round(carbo_total, 1),
+                gordura_g=round(gordura_total, 1),
+            ),
+            refeicoes=refeicoes,
+        ))
+
+    response = DietGenerateResponse(
+        paciente=paciente,
+        tmb=metas_nutricionais.tmb,
+        planos=planos_alimentares,
+        pdf_url="",
+    )
+
+    return gerar_pdf(response)

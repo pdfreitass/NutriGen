@@ -1,6 +1,6 @@
 # SPEC-006: Atualização do Orquestrador (DietPlannerUseCase)
 
-**Status:** 🔴 Pendente
+**Status:** ✅ Concluído
 **Fase:** 1 — MVP
 
 ---
