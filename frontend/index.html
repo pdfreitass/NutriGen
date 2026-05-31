@@ -414,187 +414,55 @@
         <!-- ========== PAGE: DIET GENERATOR ========== -->
         <section id="page-diet" class="hidden">
             <div class="text-center" style="margin-bottom: 1.5rem;">
-                <h1 class="page-title">&#x1F3CB;&#xFE0F;&#x200D;&#x2642;&#xFE0F; Gerar Planos Alimentares</h1>
+                <h1 class="page-title">&#x1F372; Gerar Planos Alimentares</h1>
                 <p class="page-subtitle">
-                    Preencha os dados do paciente e as rotinas para gerar 3 planos personalizados
+                    Descreva sua rotina em linguagem natural e receba 3 planos distintos em segundos
                 </p>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">&#x1F9D1;&#x200D;&#x2695;&#xFE0F; Dados do Paciente</h2>
+                    <h2 class="card-title">&#x270D;&#xFE0F; Descreva sua rotina</h2>
+                    <p class="card-subtitle">Quanto mais detalhes, melhores os planos!</p>
                 </div>
 
                 <div id="diet-error" class="alert alert-error hidden">
                     <span class="alert-icon">&#x274C;</span>
                     <span class="alert-text"></span>
+                    <button class="alert-retry hidden" id="diet-retry-btn">&#x1F504; Tentar Novamente</button>
                 </div>
 
-                <form id="diet-form" novalidate>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label" for="diet-nome">
-                                Nome <span class="required">*</span>
-                            </label>
-                            <input type="text" id="diet-nome" class="form-input" placeholder="Nome do paciente" required>
-                            <div class="form-error"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="diet-sexo">
-                                Sexo <span class="required">*</span>
-                            </label>
-                            <select id="diet-sexo" class="form-select" required>
-                                <option value="">Selecione...</option>
-                                <option value="masculino">Masculino</option>
-                                <option value="feminino">Feminino</option>
-                            </select>
-                            <div class="form-error"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="diet-idade">
-                                Idade (anos) <span class="required">*</span>
-                            </label>
-                            <input type="number" id="diet-idade" class="form-input" placeholder="Ex: 30" required min="1" max="120">
-                            <div class="form-error"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="diet-peso">
-                                Peso (kg) <span class="required">*</span>
-                            </label>
-                            <input type="number" id="diet-peso" class="form-input" placeholder="Ex: 75.5" required min="20" max="500" step="0.1">
-                            <div class="form-error"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="diet-altura">
-                                Altura (cm) <span class="required">*</span>
-                            </label>
-                            <input type="number" id="diet-altura" class="form-input" placeholder="Ex: 175" required min="50" max="280">
-                            <div class="form-error"></div>
-                        </div>
+                <div class="diet-textarea-wrapper">
+                    <textarea
+                        id="diet-texto"
+                        class="diet-textarea"
+                        placeholder="Descreva sua rotina, objetivos e preferências alimentares...&#10;&#10;Ex: 'Trabalho sentado, faço musculação 4x por semana. Quero ganhar massa. Tenho 1,75m, 72kg, 28 anos. Gosto de frango, batata doce, ovos. Não como peixe.'"
+                        maxlength="2000"
+                        rows="6"
+                    ></textarea>
+                    <div class="diet-textarea-footer">
+                        <span class="diet-char-counter" id="diet-char-counter">0/2000</span>
                     </div>
+                </div>
 
-                    <!-- Routines -->
-                    <div style="margin-top: 2rem;">
-                        <div class="card-header" style="padding-left: 0;">
-                            <h2 class="card-title">&#x1F4CB; Rotinas Alimentares</h2>
-                            <p class="card-subtitle">Defina 3 rotinas com objetivos diferentes</p>
-                        </div>
-
-                        <!-- Routine 1 -->
-                        <div class="routine-card">
-                            <div class="routine-card-header">
-                                <span class="routine-number">Rotina 1</span>
-                            </div>
-                            <div class="routine-card-body">
-                                <div class="form-group">
-                                    <label class="form-label">Nome da rotina <span class="required">*</span></label>
-                                    <input type="text" class="form-input routine-nome" placeholder="Ex: Low Carb" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Nível de atividade <span class="required">*</span></label>
-                                    <select class="form-select routine-atividade" required>
-                                        <option value="sedentario">Sedentário</option>
-                                        <option value="moderado">Moderado</option>
-                                        <option value="ativo">Ativo</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Objetivo <span class="required">*</span></label>
-                                    <select class="form-select routine-objetivo" required>
-                                        <option value="perda_de_peso">Perda de Peso</option>
-                                        <option value="manutencao">Manutenção</option>
-                                        <option value="ganho_de_massa">Ganho de Massa</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Alimentos preferidos <span class="required">*</span></label>
-                                    <input type="text" class="form-input routine-alimentos" placeholder="frango, ovos, brócolis..." required>
-                                    <span class="form-hint">Separe por vírgula</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Routine 2 -->
-                        <div class="routine-card">
-                            <div class="routine-card-header">
-                                <span class="routine-number">Rotina 2</span>
-                            </div>
-                            <div class="routine-card-body">
-                                <div class="form-group">
-                                    <label class="form-label">Nome da rotina <span class="required">*</span></label>
-                                    <input type="text" class="form-input routine-nome" placeholder="Ex: Balanceada" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Nível de atividade <span class="required">*</span></label>
-                                    <select class="form-select routine-atividade" required>
-                                        <option value="sedentario">Sedentário</option>
-                                        <option value="moderado">Moderado</option>
-                                        <option value="ativo">Ativo</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Objetivo <span class="required">*</span></label>
-                                    <select class="form-select routine-objetivo" required>
-                                        <option value="perda_de_peso">Perda de Peso</option>
-                                        <option value="manutencao">Manutenção</option>
-                                        <option value="ganho_de_massa">Ganho de Massa</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Alimentos preferidos <span class="required">*</span></label>
-                                    <input type="text" class="form-input routine-alimentos" placeholder="arroz, feijão, frango..." required>
-                                    <span class="form-hint">Separe por vírgula</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Routine 3 -->
-                        <div class="routine-card">
-                            <div class="routine-card-header">
-                                <span class="routine-number">Rotina 3</span>
-                            </div>
-                            <div class="routine-card-body">
-                                <div class="form-group">
-                                    <label class="form-label">Nome da rotina <span class="required">*</span></label>
-                                    <input type="text" class="form-input routine-nome" placeholder="Ex: High Protein" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Nível de atividade <span class="required">*</span></label>
-                                    <select class="form-select routine-atividade" required>
-                                        <option value="sedentario">Sedentário</option>
-                                        <option value="moderado">Moderado</option>
-                                        <option value="ativo">Ativo</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Objetivo <span class="required">*</span></label>
-                                    <select class="form-select routine-objetivo" required>
-                                        <option value="perda_de_peso">Perda de Peso</option>
-                                        <option value="manutencao">Manutenção</option>
-                                        <option value="ganho_de_massa">Ganho de Massa</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Alimentos preferidos <span class="required">*</span></label>
-                                    <input type="text" class="form-input routine-alimentos" placeholder="batata doce, whey, ovo..." required>
-                                    <span class="form-hint">Separe por vírgula</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Submit -->
-                    <div style="margin-top: 1.5rem; text-align: center;">
-                        <button id="diet-btn" type="submit" class="btn btn-primary btn-lg" style="min-width: 280px;">
-                            <span class="spinner"></span>
-                            <span class="btn-text">&#x2699;&#xFE0F; Gerar Planos Alimentares</span>
+                <!-- Exemplos rotativos -->
+                <div class="diet-examples" id="diet-examples">
+                    <p class="diet-examples-label">&#x1F4A1; Exemplos para inspirar:</p>
+                    <div class="diet-example-card" id="diet-example-card">
+                        <p class="diet-example-text" id="diet-example-text"></p>
+                        <button class="btn btn-sm btn-outline" id="diet-example-btn">
+                            Usar este exemplo
                         </button>
                     </div>
-                </form>
+                    <div class="diet-example-dots" id="diet-example-dots"></div>
+                </div>
+
+                <div style="margin-top: 1.5rem; text-align: center;">
+                    <button id="diet-btn" type="button" class="btn btn-primary btn-lg" disabled>
+                        <span class="spinner"></span>
+                        <span class="btn-text">&#x2728; Gerar Planos</span>
+                    </button>
+                </div>
             </div>
         </section>
 

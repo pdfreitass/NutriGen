@@ -950,3 +950,155 @@ body {
 .page-active {
     animation: fadeIn 0.3s ease;
 }
+
+/* =============================================
+   SPEC-009: Diet Textarea & Examples
+   ============================================= */
+
+.diet-textarea-wrapper {
+    position: relative;
+}
+
+.diet-textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 1rem;
+    font-size: 1rem;
+    font-family: inherit;
+    line-height: 1.6;
+    color: var(--gray-800);
+    background: var(--white);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    resize: vertical;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.diet-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+}
+
+.diet-textarea-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.25rem 0.5rem 0;
+}
+
+.diet-char-counter {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--gray-400);
+    transition: color 0.2s;
+}
+
+.diet-char-counter.valid {
+    color: var(--success);
+}
+
+.diet-char-counter.invalid {
+    color: var(--error);
+}
+
+/* Examples */
+.diet-examples {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+}
+
+.diet-examples-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+}
+
+.diet-example-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.diet-example-text {
+    flex: 1;
+    min-width: 200px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--gray-700);
+    margin: 0;
+}
+
+.diet-example-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.diet-example-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gray-300);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.diet-example-dot.active {
+    background: var(--primary);
+    transform: scale(1.3);
+}
+
+.btn-sm {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.btn-outline:hover {
+    background: var(--primary);
+    color: var(--white);
+}
+
+/* Alert retry button */
+.alert-retry {
+    margin-left: auto;
+    background: transparent;
+    color: inherit;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-sm);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.alert-retry.hidden {
+    display: none;
+}
+
+/* Loading text stage transitions */
+.loading-text.stage-1,
+.loading-text.stage-2,
+.loading-text.stage-3,
+.loading-text.stage-4 {
+    animation: fadeIn 0.5s ease;
+}

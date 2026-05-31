@@ -13,14 +13,14 @@
 | Métrica | Valor |
 |---------|:----:|
 | Total de SPECs | **25** |
-| Concluídas | **8** |
+| Concluídas | **9** |
 | Parciais | **2** |
 | Em andamento | **0** |
-| Pendentes | **15** |
-| Progresso Geral | **62%** |
+| Pendentes | **14** |
+| Progresso Geral | **69%** |
 
 ```
-Progresso: [███████████████████████████████░░░░░░░░░░░░░░░░░░░] 62%
+Progresso: [██████████████████████████████████░░░░░░░░░░░░░░░░] 69%
 ```
 
 ---
@@ -39,7 +39,7 @@ Progresso: [██████████████████████�
 | [SPEC-006](SPEC-006-orquestrador.md) | Atualização do Orquestrador (DietPlannerUseCase) | ✅ Concluído |
 | [SPEC-007](SPEC-007-endpoint-geracao.md) | Atualização do Endpoint de Geração | ✅ Concluído |
 | [SPEC-008](SPEC-008-expansao-restricoes.md) | Expansão de Restrições e Condições Especiais | ✅ Concluído |
-| [SPEC-009](SPEC-009-frontend-input.md) | Frontend — Página de Input com Linguagem Natural | 🔴 Pendente |
+| [SPEC-009](SPEC-009-frontend-input.md) | Frontend — Página de Input com Linguagem Natural | ✅ Concluído |
 | [SPEC-010](SPEC-010-frontend-resultados.md) | Frontend — Tela de Resultados com 3 Planos | 🔴 Pendente |
 | [SPEC-011](SPEC-011-tratamento-erros.md) | Tratamento de Erros e Resiliência da LLM | 🟡 Parcial |
 | [SPEC-012](SPEC-012-configuracao-ambiente.md) | Configuração de Ambiente e Segurança | 🟡 Parcial |

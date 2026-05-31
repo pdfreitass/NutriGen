@@ -74,15 +74,15 @@ function cacheDom() {
     dom.strengthBars = $$('.strength-bar');
     dom.pwdReqs = $$('.password-requirements li');
 
-    // Diet form
-    dom.dietForm = $('#diet-form');
-    dom.dietNome = $('#diet-nome');
-    dom.dietSexo = $('#diet-sexo');
-    dom.dietIdade = $('#diet-idade');
-    dom.dietPeso = $('#diet-peso');
-    dom.dietAltura = $('#diet-altura');
-    dom.dietError = $('#diet-error');
+    // Diet form (SPEC-009: textarea-based)
+    dom.dietTextarea = $('#diet-texto');
     dom.dietBtn = $('#diet-btn');
+    dom.dietError = $('#diet-error');
+    dom.dietRetryBtn = $('#diet-retry-btn');
+    dom.dietCharCounter = $('#diet-char-counter');
+    dom.exampleText = $('#diet-example-text');
+    dom.exampleBtn = $('#diet-example-btn');
+    dom.exampleDots = $('#diet-example-dots');
 
     // Routine fields
     dom.routineNome = $$('.routine-nome');
@@ -130,6 +130,13 @@ function showPage(pageName) {
     }
 
     state.currentPage = pageName;
+
+    // Start/stop example rotation on diet page
+    if (pageName === 'diet') {
+        startExampleRotation();
+    } else {
+        stopExampleRotation();
+    }
 
     // Update header visibility
     updateHeader();
@@ -342,6 +349,11 @@ function initializeRoutines() {
 function showDietError(msg) {
     dom.dietError.querySelector('.alert-text').textContent = msg;
     dom.dietError.classList.remove('hidden');
+    // Show retry button only for 5xx/server errors
+    const isServerError = /502|503|504|500|Erro interno|indisponível|tempo limite/i.test(msg);
+    if (dom.dietRetryBtn) {
+        dom.dietRetryBtn.classList.toggle('hidden', !isServerError);
+    }
 }
 
 // ─── Results Rendering ────────────────────────
@@ -569,7 +581,6 @@ function formatTelefone(val) {
 // ─── Initialize ───────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     cacheDom();
-    initializeRoutines();
 
     // ── Login Form ──
     dom.loginForm.addEventListener('submit', async (e) => {
@@ -804,71 +815,161 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ── Diet Form ──
-    dom.dietForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        dom.dietError.classList.add('hidden');
+    // ── Diet Textarea + Examples (SPEC-009) ──
 
-        const nome = dom.dietNome.value.trim();
-        const sexo = dom.dietSexo.value;
-        const idade = parseInt(dom.dietIdade.value);
-        const peso = parseFloat(dom.dietPeso.value);
-        const altura = parseFloat(dom.dietAltura.value);
+    // Exemplos rotativos
+    const DIET_EXAMPLES = [
+        {
+            text: 'Trabalho sentado o dia todo, faço musculação 4x por semana. Quero ganhar massa. Tenho 1,75m, 72kg e 28 anos. Gosto de frango, batata doce, ovo e banana. Não como peixe.',
+            label: 'Atleta — Ganho de Massa',
+        },
+        {
+            text: 'Sou vegetariano, corro 3x por semana, quero perder uns quilinhos. Tenho 1,65m, 78kg, 35 anos. Adoro salada, grão de bico, tofu e frutas.',
+            label: 'Vegetariano — Perda de Peso',
+        },
+        {
+            text: 'Cuido da casa e das crianças, não sobra tempo pra academia. Ando bastante a pé. Quero só me alimentar melhor. Tenho 1,60m, 62kg, 42 anos. Gosto de arroz, feijão, carne moída e legumes.',
+            label: 'Rotina Caseira — Saúde',
+        },
+        {
+            text: 'Sou estagiário, almoço no bandejão, janto em casa. Faço academia 5x por semana e quero definição. 1,80m, 85kg, 22 anos. Curto frango grelhado, whey, aveia e pasta de amendoim.',
+            label: 'Universitário — Definição',
+        },
+        {
+            text: 'Estou grávida de 5 meses, meu médico pediu pra eu me alimentar melhor. Não tenho restrições específicas. 1,68m, 70kg, 31 anos. Gosto de frutas, iogurte, peixe e legumes.',
+            label: 'Gestante — Nutrição',
+        },
+    ];
 
-        if (!nome || !sexo || !idade || !peso || !altura) {
-            showDietError('Preencha todos os dados do paciente.');
-            return;
+    let _exampleIndex = 0;
+    let _exampleTimer = null;
+
+    function startExampleRotation() {
+        _exampleIndex = 0;
+        _showExample(0);
+        _renderExampleDots();
+        _exampleTimer = setInterval(() => {
+            _exampleIndex = (_exampleIndex + 1) % DIET_EXAMPLES.length;
+            _showExample(_exampleIndex);
+        }, 5000);
+    }
+
+    function stopExampleRotation() {
+        if (_exampleTimer) {
+            clearInterval(_exampleTimer);
+            _exampleTimer = null;
         }
+    }
 
-        const routines = [];
-        for (let i = 0; i < 3; i++) {
-            const nomeRotina = dom.routineNome[i]?.value.trim();
-            const atividade = dom.routineAtividade[i]?.value;
-            const objetivo = dom.routineObjetivo[i]?.value;
-            const alimentos = dom.routineAlimentos[i]?.value
-                .split(',')
-                .map(a => a.trim())
-                .filter(a => a.length > 0);
+    function _showExample(index) {
+        if (!dom.exampleText || !dom.exampleDots) return;
+        dom.exampleText.textContent = DIET_EXAMPLES[index].text;
+        const dots = dom.exampleDots.querySelectorAll('.diet-example-dot');
+        dots.forEach((d, i) => {
+            d.classList.toggle('active', i === index);
+        });
+    }
 
-            if (!nomeRotina || !atividade || !objetivo || alimentos.length === 0) {
-                showDietError(`Preencha todos os campos da Rotina ${i + 1}.`);
-                return;
-            }
-
-            routines.push({
-                nome: nomeRotina,
-                nivel_atividade: atividade,
-                objetivo: objetivo,
-                alimentos_preferidos: alimentos,
+    function _renderExampleDots() {
+        if (!dom.exampleDots) return;
+        dom.exampleDots.innerHTML = DIET_EXAMPLES.map((_, i) =>
+            `<span class="diet-example-dot${i === 0 ? ' active' : ''}" data-index="${i}"></span>`
+        ).join('');
+        dom.exampleDots.querySelectorAll('.diet-example-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                const idx = parseInt(dot.dataset.index);
+                _exampleIndex = idx;
+                _showExample(idx);
+                // Reiniciar timer
+                stopExampleRotation();
+                _exampleTimer = setInterval(() => {
+                    _exampleIndex = (_exampleIndex + 1) % DIET_EXAMPLES.length;
+                    _showExample(_exampleIndex);
+                }, 5000);
             });
+        });
+    }
+
+    // Botão "Usar este exemplo"
+    if (dom.exampleBtn) {
+        dom.exampleBtn.addEventListener('click', () => {
+            dom.dietTextarea.value = DIET_EXAMPLES[_exampleIndex].text;
+            _updateCharCounter();
+        });
+    }
+
+    // Contador de caracteres + habilitar/desabilitar botão
+    function _updateCharCounter() {
+        const len = dom.dietTextarea.value.length;
+        dom.dietCharCounter.textContent = `${len}/2000`;
+        dom.dietCharCounter.classList.remove('valid', 'invalid');
+        if (len >= 20) {
+            dom.dietCharCounter.classList.add('valid');
+            dom.dietBtn.disabled = false;
+        } else {
+            dom.dietCharCounter.classList.add('invalid');
+            dom.dietBtn.disabled = true;
         }
+    }
 
-        const requestBody = {
-            paciente: {
-                nome,
-                sexo,
-                idade,
-                peso_kg: peso,
-                altura_cm: altura,
-            },
-            rotinas: routines,
-        };
+    if (dom.dietTextarea) {
+        dom.dietTextarea.addEventListener('input', _updateCharCounter);
+    }
 
-        dom.dietBtn.classList.add('loading');
-        showLoading('Gerando planos alimentares...');
+    // Handler do botão Gerar Planos
+    if (dom.dietBtn) {
+        dom.dietBtn.addEventListener('click', async () => {
+            const texto = dom.dietTextarea.value.trim();
+            if (texto.length < 20) return;
 
-        try {
-            const result = await apiRequest('POST', '/api/diet/generate', requestBody);
-            state.dietResult = result;
-            renderResults(result);
-            showPage('results');
-        } catch (err) {
-            hideLoading();
-            showDietError(err.message);
-        } finally {
-            dom.dietBtn.classList.remove('loading');
-        }
-    });
+            dom.dietError.classList.add('hidden');
+            dom.dietBtn.classList.add('loading');
+            dom.dietRetryBtn.classList.add('hidden');
+
+            // Sanitização leve client-side
+            const sanitized = texto
+                .replace(/<[^>]*>/g, '')        // remove HTML tags
+                .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')  // remove control chars
+                .replace(/\s+/g, ' ')           // normalize spaces
+                .trim();
+
+            // Loading com estágios dinâmicos
+            const stages = [
+                'Analisando sua descrição...',
+                'Calculando seu metabolismo...',
+                'Gerando 3 planos com IA...',
+                'Montando seu PDF...',
+            ];
+            let stageIdx = 0;
+            showLoading(stages[0]);
+            const stageInterval = setInterval(() => {
+                stageIdx = Math.min(stageIdx + 1, stages.length - 1);
+                dom.loadingText.textContent = stages[stageIdx];
+            }, 6000);
+
+            try {
+                const result = await apiRequest('POST', '/api/diet/generate', { texto: sanitized });
+                clearInterval(stageInterval);
+                state.dietResult = result;
+                renderResults(result);
+                showPage('results');
+            } catch (err) {
+                clearInterval(stageInterval);
+                hideLoading();
+                showDietError(err.message);
+            } finally {
+                dom.dietBtn.classList.remove('loading');
+            }
+        });
+    }
+
+    // Retry button
+    if (dom.dietRetryBtn) {
+        dom.dietRetryBtn.addEventListener('click', () => {
+            dom.dietError.classList.add('hidden');
+            dom.dietBtn.click();
+        });
+    }
 
     // ── Navigation Links ──
     document.addEventListener('click', (e) => {
@@ -890,8 +991,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── New Diet Button ──
     dom.btnNewDiet.addEventListener('click', () => {
         showPage('diet');
-        dom.dietForm.reset();
-        initializeRoutines();
+        dom.dietTextarea.value = '';
+        _updateCharCounter();
     });
 
     // ── Clear field errors on input ──
