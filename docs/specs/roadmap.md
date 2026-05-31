@@ -13,14 +13,14 @@
 | Métrica | Valor |
 |---------|:----:|
 | Total de SPECs | **25** |
-| Concluídas | **10** |
-| Parciais | **2** |
+| Concluídas | **11** |
+| Parciais | **1** |
 | Em andamento | **0** |
 | Pendentes | **13** |
-| Progresso Geral | **77%** |
+| Progresso Geral | **85%** |
 
 ```
-Progresso: [██████████████████████████████████████░░░░░░░░░░] 77%
+Progresso: [██████████████████████████████████████████░░░░░░] 85%
 ```
 
 ---
@@ -41,7 +41,7 @@ Progresso: [██████████████████████�
 | [SPEC-008](SPEC-008-expansao-restricoes.md) | Expansão de Restrições e Condições Especiais | ✅ Concluído |
 | [SPEC-009](SPEC-009-frontend-input.md) | Frontend — Página de Input com Linguagem Natural | ✅ Concluído |
 | [SPEC-010](SPEC-010-frontend-resultados.md) | Frontend — Tela de Resultados com 3 Planos | ✅ Concluído |
-| [SPEC-011](SPEC-011-tratamento-erros.md) | Tratamento de Erros e Resiliência da LLM | 🟡 Parcial |
+| [SPEC-011](SPEC-011-tratamento-erros.md) | Tratamento de Erros e Resiliência da LLM | ✅ Concluído |
 | [SPEC-012](SPEC-012-configuracao-ambiente.md) | Configuração de Ambiente e Segurança | 🟡 Parcial |
 | [SPEC-013](SPEC-013-logs-observabilidade.md) | Logs e Observabilidade Básica | 🟡 Parcial |
 

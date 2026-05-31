@@ -10,6 +10,7 @@ from app.database import criar_tabelas, fechar_conexao
 from app.routers.diet import router as diet_router
 from app.routers.auth import router as auth_router
 from app.middleware.rate_limit import rate_limit_middleware
+from app.middleware.request_id import request_id_middleware
 
 
 @asynccontextmanager
@@ -39,6 +40,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request ID — deve vir ANTES do rate limiting (SPEC-011)
+@app.middleware("http")
+async def request_id_handler(request: Request, call_next):
+    """Injeta e propaga request_id para correlação de logs."""
+    response = await request_id_middleware(request, call_next)
+    return response
 
 # Rate limiting (específico para /api/diet/generate)
 @app.middleware("http")

@@ -161,53 +161,115 @@ function hideLoading() {
     dom.loadingOverlay.classList.add('hidden');
 }
 
-// ─── API Helper ───────────────────────────────
+// ─── Consecutive error tracking (SPEC-011) ──────
+let _consecutiveErrors = 0;
+
+// ─── API Helper (SPEC-011: 95s timeout) ─────────
 async function apiRequest(method, path, body = null) {
     const url = `${API_BASE}${path}`;
+
+    // Create AbortController with 95s timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 95000);
+
     const options = {
         method,
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
         },
+        signal: controller.signal,
     };
 
     if (body) {
         options.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, options);
+    let response;
+    try {
+        response = await fetch(url, options);
+    } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+            throw new Error('Tempo limite excedido. Tente um texto mais curto ou tente novamente.');
+        }
+        throw new Error('Sem conexão com o servidor. Verifique sua rede.');
+    }
 
-    // Tentar parsear JSON; se falhar (ex: resposta HTML/binária), trata como erro genérico
+    clearTimeout(timeoutId);
+
+    // Extract request_id from response header
+    const requestId = response.headers.get('X-Request-ID') || '';
+
+    // Try to parse JSON
     let data;
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
         try {
             data = await response.json();
         } catch (_parseError) {
-            throw new Error(`Resposta inválida do servidor (status ${response.status})`);
+            _consecutiveErrors++;
+            throw new Error(`Resposta inválida do servidor. Nossa equipe foi notificada.${_getConsecutiveHint()}`);
         }
     } else {
-        // Resposta não-JSON (ex: erro 500 em HTML, binário inesperado)
+        _consecutiveErrors++;
         const text = await response.text().catch(() => '');
         throw new Error(
             text
-                ? `Erro do servidor (${response.status}): ${text.substring(0, 200)}`
-                : `Erro do servidor (status ${response.status})`
+                ? `Erro do servidor: ${text.substring(0, 200)}${_getConsecutiveHint()}`
+                : `Erro do servidor (status ${response.status}).${_getConsecutiveHint()}`
         );
     }
 
     if (!response.ok) {
-        const detail = data.detail || data.message || 'Erro desconhecido';
-        // Pydantic validation errors come as array
-        if (Array.isArray(detail)) {
-            const msgs = detail.map(e => e.msg || e.message).join('; ');
-            throw new Error(msgs);
-        }
+        _consecutiveErrors++;
+        // Map HTTP status to user-friendly message
+        const detail = _getHttpErrorMessage(response.status, data, requestId);
         throw new Error(detail);
     }
 
+    // Reset consecutive errors on success
+    _consecutiveErrors = 0;
     return data;
+}
+
+function _getHttpErrorMessage(status, data, requestId) {
+    // Use server detail if it exists and is user-friendly
+    const serverMsg = data?.detail || data?.message || '';
+
+    // Pydantic validation errors come as array
+    if (Array.isArray(serverMsg)) {
+        const msgs = serverMsg.map(e => e.msg || e.message).join('; ');
+        return msgs;
+    }
+
+    // If server already returned a good user-friendly message, use it
+    if (serverMsg && serverMsg.length > 10 && !serverMsg.startsWith('{')) {
+        return serverMsg;
+    }
+
+    // Otherwise, map status to our messages
+    const messages = {
+        400: 'Verifique os dados informados e tente novamente.',
+        401: 'Sessão expirada. Faça login novamente.',
+        404: 'Recurso não encontrado.',
+        422: 'Dados inválidos. Verifique as informações enviadas.',
+        429: 'Muitas requisições. Aguarde alguns segundos antes de tentar novamente.',
+        500: 'Erro interno. Nossa equipe foi notificada. Tente novamente.',
+        502: 'Não foi possível gerar planos válidos. Tente descrever sua rotina com outras palavras.',
+        503: 'Nossa IA está temporariamente indisponível. Tente novamente em alguns minutos.',
+        504: 'Tempo limite excedido. Tente um texto mais curto.',
+    };
+    const baseMsg = messages[status] || `Erro inesperado (${status}). Tente novamente.`;
+    const idSuffix = requestId ? ` [ID: ${requestId.slice(0, 8)}]` : '';
+    return baseMsg + idSuffix + _getConsecutiveHint();
+}
+
+function _getConsecutiveHint() {
+    if (_consecutiveErrors >= 3) {
+        return ' Estamos enfrentando instabilidade. Tente novamente mais tarde.';
+    }
+    return '';
 }
 
 // ─── Auth: Login ──────────────────────────────
