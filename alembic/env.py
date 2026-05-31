@@ -17,8 +17,8 @@ from alembic import context
 load_dotenv()
 
 # Importar metadados e models para autogenerate
-from app.database import Base  # noqa: E402
-from app.models.database import Usuario, RecuperacaoSenha  # noqa: E402, F401
+from app.banco_dados import Base  # noqa: E402
+from app.modelos.banco import Usuario, RecuperacaoSenha  # noqa: E402, F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

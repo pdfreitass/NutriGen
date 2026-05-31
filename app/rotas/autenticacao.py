@@ -3,18 +3,18 @@ Router com os endpoints de autenticação e cadastro de usuário.
 """
 
 from fastapi import APIRouter, HTTPException
-from app.models.schemas import (
+from app.modelos.esquemas import (
     UserCreate, UserResponse, LoginRequest,
     ForgotPasswordRequest, ResetPasswordRequest, Endereco,
 )
-from app.services.auth_service import (
+from app.servicos.servico_autenticacao import (
     registrar_usuario,
     autenticar_usuario,
     gerar_token_jwt,
     solicitar_redefinicao_senha,
     redefinir_senha,
 )
-from app.services.viacep_service import buscar_endereco_por_cep
+from app.servicos.servico_viacep import buscar_endereco_por_cep
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticação"])
 

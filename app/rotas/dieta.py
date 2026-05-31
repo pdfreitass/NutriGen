@@ -16,7 +16,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 
-from app.exceptions import (
+from app.excecoes import (
     CamposObrigatoriosAusentesError,
     DeepSeekInvalidResponseError,
     DeepSeekTimeoutError,
@@ -25,8 +25,8 @@ from app.exceptions import (
     PlanValidationError,
     ValorFisiologicoInvalidoError,
 )
-from app.models.schemas import TextGenerateRequest, DietGenerateResponseV2
-from app.use_cases.gerar_planos import GerarPlanosUseCase
+from app.modelos.esquemas import TextGenerateRequest, DietGenerateResponseV2
+from app.casos_uso.gerar_planos import GerarPlanosUseCase
 
 logger = logging.getLogger(__name__)
 

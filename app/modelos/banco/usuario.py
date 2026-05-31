@@ -5,7 +5,7 @@ Modelo ORM para a tabela de usuários.
 from datetime import datetime
 from sqlalchemy import String, DateTime, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.database import Base
+from app.banco_dados import Base
 
 
 class Usuario(Base):

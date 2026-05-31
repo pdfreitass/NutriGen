@@ -9,7 +9,7 @@ Reusa os módulos existentes:
 - macro_distributor.py (distribuição por objetivo)
 
 Uso:
-    from app.services.nutrition_calculator import NutritionCalculator
+    from app.servicos.calculadora_nutricional import NutritionCalculator
 
     calc = NutritionCalculator()
     metas = calc.calcular(perfil_extraido)
@@ -17,10 +17,10 @@ Uso:
 
 import logging
 
-from app.models.schemas import MetasNutricionais, PerfilExtraido
-from app.services.tmb_calculator import calcular_tmb, calcular_get
-from app.services.macro_distributor import distribuir_macros
-from app.exceptions import GETForaDoIntervaloSeguroError
+from app.modelos.esquemas import MetasNutricionais, PerfilExtraido
+from app.servicos.calculadora_tmb import calcular_tmb, calcular_get
+from app.servicos.distribuidor_macros import distribuir_macros
+from app.excecoes import GETForaDoIntervaloSeguroError
 
 logger = logging.getLogger(__name__)
 

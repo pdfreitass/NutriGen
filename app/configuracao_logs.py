@@ -5,13 +5,13 @@ Formata logs em JSON com campos padronizados e propaga o request_id
 do middleware para todas as camadas via logging filter.
 
 Uso:
-    from app.logging_config import setup_logging
+    from app.configuracao_logs import setup_logging
     setup_logging()
 
 Campos no JSON:
     - timestamp: ISO 8601 com timezone
     - level: DEBUG, INFO, WARNING, ERROR
-    - module: nome do módulo (ex: app.services.plan_generator_service)
+    - module: nome do módulo (ex: app.servicos.servico_geracao_planos)
     - request_id: UUID da requisição (do contextvars)
     - message: descrição do evento
     - metadata: dados extras (latência, tokens, etc.)
@@ -65,7 +65,7 @@ class RequestIDFilter(logging.Filter):
 
     def filter(self, record: logging.LogRecord) -> bool:
         try:
-            from app.middleware.request_id import get_request_id
+            from app.middleware.id_requisicao import get_request_id
             rid = get_request_id()
             if rid:
                 record.request_id = rid

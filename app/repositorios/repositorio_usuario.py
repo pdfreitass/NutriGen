@@ -12,7 +12,7 @@ from typing import Optional, Dict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.database import Usuario, RecuperacaoSenha
+from app.modelos.banco import Usuario, RecuperacaoSenha
 
 
 def _mascarar_cpf(cpf: str) -> str:

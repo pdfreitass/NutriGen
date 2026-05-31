@@ -2,7 +2,7 @@
 Módulo orquestrador que coordena o fluxo completo de geração do plano alimentar.
 """
 
-from app.models.schemas import (
+from app.modelos.esquemas import (
     DietGenerateRequest,
     DietGenerateResponse,
     PlanoAlimentar,
@@ -10,9 +10,9 @@ from app.models.schemas import (
     AlimentoPlano,
     Refeicao,
 )
-from app.services.tmb_calculator import calcular_tmb, calcular_get
-from app.services.macro_distributor import distribuir_macros
-from app.services.food_suggester import sugerir_alimentos
+from app.servicos.calculadora_tmb import calcular_tmb, calcular_get
+from app.servicos.distribuidor_macros import distribuir_macros
+from app.servicos.sugeridor_alimentos import sugerir_alimentos
 
 
 def gerar_plano_completo(request: DietGenerateRequest) -> DietGenerateResponse:

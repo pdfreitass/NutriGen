@@ -6,7 +6,7 @@ Gera um UUID único para cada requisição e o propaga via:
 - Header X-Request-ID na resposta (para o frontend)
 
 Uso em qualquer módulo:
-    from app.middleware.request_id import get_request_id
+    from app.middleware.id_requisicao import get_request_id
     rid = get_request_id()
 """
 

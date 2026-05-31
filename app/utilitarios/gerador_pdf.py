@@ -20,7 +20,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib import colors
 
-from app.models.schemas import DietGenerateResponse
+from app.modelos.esquemas import DietGenerateResponse
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "outputs")
 OUTPUT_DIR = os.path.abspath(OUTPUT_DIR)
@@ -242,7 +242,7 @@ def gerar_pdf_adaptado(
     Returns:
         Nome do arquivo PDF gerado (UUID.pdf).
     """
-    from app.models.schemas import (
+    from app.modelos.esquemas import (
         DietGenerateResponse,
         PatientData,
         PlanoAlimentar,

@@ -20,11 +20,11 @@ import logging
 import time
 from typing import Any
 
-from app.config import GENERATION_TIMEOUT
-from app.exceptions import DeepSeekInvalidResponseError
-from app.infrastructure.deepseek_client import DeepSeekClient
-from app.infrastructure.food_catalog import food_catalog
-from app.models.schemas import (
+from app.configuracao import GENERATION_TIMEOUT
+from app.excecoes import DeepSeekInvalidResponseError
+from app.infraestrutura.cliente_deepseek import DeepSeekClient
+from app.infraestrutura.catalogo_alimentos import food_catalog
+from app.modelos.esquemas import (
     ItemGerado,
     MetasNutricionais,
     PerfilExtraido,

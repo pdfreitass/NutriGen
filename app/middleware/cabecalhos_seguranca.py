@@ -11,7 +11,7 @@ Adiciona headers HTTP de proteção contra ataques comuns:
 from fastapi import Request
 from fastapi.responses import Response
 
-from app.config import APP_ENV
+from app.configuracao import APP_ENV
 
 
 async def security_headers_middleware(request: Request, call_next):

@@ -6,7 +6,7 @@ do módulo e oferece métodos de busca por nome, categoria e expansão
 de restrições alimentares genéricas.
 
 Uso:
-    from app.infrastructure.food_catalog import food_catalog
+    from app.infraestrutura.catalogo_alimentos import food_catalog
 
     alimento = food_catalog.buscar_por_nome("frango")
     proteinas = food_catalog.buscar_por_categoria("Carnes e Peixes")
@@ -17,7 +17,7 @@ import json
 import os
 from typing import Optional
 
-from app.models.food import Alimento
+from app.modelos.alimento import Alimento
 
 # ─── Mapeamentos fixos para expandir_restricao ──────────────
 # Restrições genéricas → lista de alimentos concretos do catálogo.

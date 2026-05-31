@@ -14,7 +14,7 @@ Fluxo (Fluxo 1 do fluxos.md):
 7. Montar e retornar DietGenerateResponse
 
 Uso:
-    from app.use_cases.gerar_planos import GerarPlanosUseCase
+    from app.casos_uso.gerar_planos import GerarPlanosUseCase
 
     use_case = GerarPlanosUseCase()
     response = use_case.executar("Tenho 28 anos, 72kg...")
@@ -27,7 +27,7 @@ from typing import Optional
 
 from fastapi import HTTPException
 
-from app.exceptions import (
+from app.excecoes import (
     CamposObrigatoriosAusentesError,
     DeepSeekError,
     DeepSeekInvalidResponseError,
@@ -38,20 +38,20 @@ from app.exceptions import (
     PlanValidationError,
     ValorFisiologicoInvalidoError,
 )
-from app.infrastructure.food_catalog import food_catalog
-from app.models.schemas import (
+from app.infraestrutura.catalogo_alimentos import food_catalog
+from app.modelos.esquemas import (
     DietGenerateResponse,
     MetasNutricionais,
     PerfilExtraido,
     PlanosGerados,
     ValidationResult,
 )
-from app.services.extractor_service import ExtractorService
-from app.services.nutrition_calculator import NutritionCalculator
-from app.services.plan_generator_service import PlanGeneratorService
-from app.services.plan_validator import PlanValidator
-from app.services.restriction_expander import RestrictionExpander
-from app.utils.pdf_generator import gerar_pdf_adaptado
+from app.servicos.servico_extracao import ExtractorService
+from app.servicos.calculadora_nutricional import NutritionCalculator
+from app.servicos.servico_geracao_planos import PlanGeneratorService
+from app.servicos.validador_planos import PlanValidator
+from app.servicos.expansor_restricoes import RestrictionExpander
+from app.utilitarios.gerador_pdf import gerar_pdf_adaptado
 
 logger = logging.getLogger(__name__)
 

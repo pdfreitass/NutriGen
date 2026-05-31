@@ -9,7 +9,7 @@ Implementa comunicação com a API DeepSeek (OpenAI-compatible) com:
 - Tratamento de erros com exceções customizadas
 
 Uso:
-    from app.infrastructure.deepseek_client import DeepSeekClient
+    from app.infraestrutura.cliente_deepseek import DeepSeekClient
 
     client = DeepSeekClient()
     response = client.chat_completion(
@@ -26,13 +26,13 @@ import time
 
 import httpx
 
-from app.config import (
+from app.configuracao import (
     DEEPSEEK_API_KEY,
     DEEPSEEK_BASE_URL,
     DEEPSEEK_MODEL,
     DEEPSEEK_MAX_RETRIES,
 )
-from app.exceptions import (
+from app.excecoes import (
     DeepSeekInvalidResponseError,
     DeepSeekTimeoutError,
     DeepSeekUnavailableError,

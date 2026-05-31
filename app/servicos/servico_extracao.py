@@ -18,14 +18,14 @@ import logging
 import time
 from typing import Any
 
-from app.config import EXTRACTION_TIMEOUT
-from app.exceptions import (
+from app.configuracao import EXTRACTION_TIMEOUT
+from app.excecoes import (
     CamposObrigatoriosAusentesError,
     DeepSeekInvalidResponseError,
     ValorFisiologicoInvalidoError,
 )
-from app.infrastructure.deepseek_client import DeepSeekClient
-from app.models.schemas import PerfilExtraido, Perfil, RotinaExtraida
+from app.infraestrutura.cliente_deepseek import DeepSeekClient
+from app.modelos.esquemas import PerfilExtraido, Perfil, RotinaExtraida
 
 logger = logging.getLogger(__name__)
 

@@ -15,7 +15,7 @@ from typing import Optional
 
 from fastapi import Request, HTTPException
 
-from app.config import RATE_LIMIT_ANON as _CFG_ANON, RATE_LIMIT_AUTH as _CFG_AUTH
+from app.configuracao import RATE_LIMIT_ANON as _CFG_ANON, RATE_LIMIT_AUTH as _CFG_AUTH
 
 # ─── Configuração ──────────────────────────────────────────
 
