@@ -507,13 +507,16 @@ class PlanGeneratorService:
         alimentos = []
         for item_raw in alimentos_raw:
             try:
+                qtd = float(item_raw.get("quantidade_g", 0) or 0)
+                # Clampar quantidade: mínimo 10g, máximo 1000g
+                qtd = max(10.0, min(qtd, 1000.0))
                 alimento = ItemGerado(
                     nome=str(item_raw.get("nome", "")),
-                    quantidade_g=float(item_raw.get("quantidade_g", 0)),
-                    proteina_g=float(item_raw.get("proteina_g", 0)),
-                    carboidrato_g=float(item_raw.get("carboidrato_g", 0)),
-                    gordura_g=float(item_raw.get("gordura_g", 0)),
-                    calorias_kcal=float(item_raw.get("calorias_kcal", 0)),
+                    quantidade_g=qtd,
+                    proteina_g=float(item_raw.get("proteina_g", 0) or 0),
+                    carboidrato_g=float(item_raw.get("carboidrato_g", 0) or 0),
+                    gordura_g=float(item_raw.get("gordura_g", 0) or 0),
+                    calorias_kcal=float(item_raw.get("calorias_kcal", 0) or 0),
                 )
                 alimentos.append(alimento)
             except (ValueError, TypeError) as e:
