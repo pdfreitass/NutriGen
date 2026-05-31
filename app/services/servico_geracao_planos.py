@@ -22,9 +22,9 @@ from typing import Any
 
 from app.configuracao import GENERATION_TIMEOUT
 from app.excecoes import DeepSeekInvalidResponseError
-from app.infraestrutura.cliente_deepseek import DeepSeekClient
-from app.infraestrutura.catalogo_alimentos import food_catalog
-from app.modelos.esquemas import (
+from app.infrastructure.cliente_deepseek import DeepSeekClient
+from app.infrastructure.catalogo_alimentos import food_catalog
+from app.models.esquemas import (
     ItemGerado,
     MetasNutricionais,
     PerfilExtraido,

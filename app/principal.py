@@ -7,8 +7,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
 from app.banco_dados import criar_tabelas, fechar_conexao
-from app.rotas.dieta import router as diet_router
-from app.rotas.autenticacao import router as auth_router
+from app.routers.dieta import router as diet_router
+from app.routers.autenticacao import router as auth_router
 from app.middleware.limite_taxa import rate_limit_middleware
 from app.middleware.id_requisicao import request_id_middleware
 from app.middleware.cabecalhos_seguranca import security_headers_middleware

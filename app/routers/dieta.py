@@ -25,8 +25,8 @@ from app.excecoes import (
     PlanValidationError,
     ValorFisiologicoInvalidoError,
 )
-from app.modelos.esquemas import TextGenerateRequest, DietGenerateResponseV2
-from app.casos_uso.gerar_planos import GerarPlanosUseCase
+from app.models.esquemas import TextGenerateRequest, DietGenerateResponseV2
+from app.use_cases.gerar_planos import GerarPlanosUseCase
 
 logger = logging.getLogger(__name__)
 

@@ -14,7 +14,7 @@ Fluxo (Fluxo 1 do fluxos.md):
 7. Montar e retornar DietGenerateResponse
 
 Uso:
-    from app.casos_uso.gerar_planos import GerarPlanosUseCase
+    from app.use_cases.gerar_planos import GerarPlanosUseCase
 
     use_case = GerarPlanosUseCase()
     response = use_case.executar("Tenho 28 anos, 72kg...")
@@ -38,20 +38,20 @@ from app.excecoes import (
     PlanValidationError,
     ValorFisiologicoInvalidoError,
 )
-from app.infraestrutura.catalogo_alimentos import food_catalog
-from app.modelos.esquemas import (
+from app.infrastructure.catalogo_alimentos import food_catalog
+from app.models.esquemas import (
     DietGenerateResponse,
     MetasNutricionais,
     PerfilExtraido,
     PlanosGerados,
     ValidationResult,
 )
-from app.servicos.servico_extracao import ExtractorService
-from app.servicos.calculadora_nutricional import NutritionCalculator
-from app.servicos.servico_geracao_planos import PlanGeneratorService
-from app.servicos.validador_planos import PlanValidator
-from app.servicos.expansor_restricoes import RestrictionExpander
-from app.utilitarios.gerador_pdf import gerar_pdf_adaptado
+from app.services.servico_extracao import ExtractorService
+from app.services.calculadora_nutricional import NutritionCalculator
+from app.services.servico_geracao_planos import PlanGeneratorService
+from app.services.validador_planos import PlanValidator
+from app.services.expansor_restricoes import RestrictionExpander
+from app.utils.gerador_pdf import gerar_pdf_adaptado
 
 logger = logging.getLogger(__name__)
 

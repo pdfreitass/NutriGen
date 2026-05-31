@@ -12,8 +12,8 @@ from typing import Optional, Dict
 from sqlalchemy.exc import IntegrityError
 from app.configuracao import JWT_SECRET_KEY, JWT_ALGORITHM, JWT_EXPIRATION_HOURS
 from app.banco_dados import SessionFactory
-from app.repositorios.repositorio_usuario import UsuarioRepository
-from app.modelos.esquemas import Endereco
+from app.repositories.repositorio_usuario import UsuarioRepository
+from app.models.esquemas import Endereco
 
 SECRET_KEY = JWT_SECRET_KEY
 RESET_TOKEN_EXPIRATION_HOURS = 1

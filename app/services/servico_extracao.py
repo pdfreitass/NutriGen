@@ -24,8 +24,8 @@ from app.excecoes import (
     DeepSeekInvalidResponseError,
     ValorFisiologicoInvalidoError,
 )
-from app.infraestrutura.cliente_deepseek import DeepSeekClient
-from app.modelos.esquemas import PerfilExtraido, Perfil, RotinaExtraida
+from app.infrastructure.cliente_deepseek import DeepSeekClient
+from app.models.esquemas import PerfilExtraido, Perfil, RotinaExtraida
 
 logger = logging.getLogger(__name__)
 

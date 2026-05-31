@@ -19,7 +19,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from app.modelos.esquemas import (
+from app.models.esquemas import (
     ItemGerado,
     MetasNutricionais,
     PlanoGerado,
@@ -27,7 +27,7 @@ from app.modelos.esquemas import (
     RefeicaoGerada,
     ValidationResult,
 )
-from app.infraestrutura.catalogo_alimentos import FoodCatalog
+from app.infrastructure.catalogo_alimentos import FoodCatalog
 
 logger = logging.getLogger(__name__)
 

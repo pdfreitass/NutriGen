@@ -9,7 +9,7 @@ Também detecta menções a transtornos alimentares e bloqueia a geração
 nesses casos (RN-073).
 
 Uso:
-    from app.servicos.expansor_restricoes import RestrictionExpander
+    from app.services.expansor_restricoes import RestrictionExpander
 
     expander = RestrictionExpander()
     result = expander.expandir(restricoes, condicoes, food_catalog)
@@ -20,8 +20,8 @@ Uso:
 import logging
 from typing import Optional
 
-from app.infraestrutura.catalogo_alimentos import FoodCatalog
-from app.modelos.esquemas import ExpandedRestrictions
+from app.infrastructure.catalogo_alimentos import FoodCatalog
+from app.models.esquemas import ExpandedRestrictions
 
 logger = logging.getLogger(__name__)
 
