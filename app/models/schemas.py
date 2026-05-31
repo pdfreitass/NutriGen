@@ -277,3 +277,15 @@ class PlanosGerados(BaseModel):
     planos: List[PlanoGerado] = Field(
         ..., min_length=3, max_length=3, description="Exatamente 3 planos gerados"
     )
+
+
+# ─── SPEC-005: Validação de Planos ─────────────────────
+
+class ValidationResult(BaseModel):
+    """Resultado da validação pós-geração dos planos."""
+    planos_corrigidos: PlanosGerados = Field(..., description="Planos após correções")
+    correcoes_aplicadas: List[str] = Field(
+        default_factory=list,
+        description="Lista de correções aplicadas (para log, não exibidas ao usuário)",
+    )
+    aprovado: bool = Field(..., description="True se os planos passaram em todas as validações")

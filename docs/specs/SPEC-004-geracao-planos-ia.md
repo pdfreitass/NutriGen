@@ -1,6 +1,6 @@
 # SPEC-004: Serviço de Geração de Planos via IA
 
-**Status:** 🔴 Pendente
+**Status:** ✅ Concluído
 **Fase:** 1 — MVP
 
 ---

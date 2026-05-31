@@ -13,13 +13,14 @@
 | Métrica | Valor |
 |---------|:----:|
 | Total de SPECs | **25** |
-| Concluídas | **3** |
+| Concluídas | **6** |
+| Parciais | **3** |
 | Em andamento | **0** |
-| Pendentes | **22** |
-| Progresso Geral | **12%** |
+| Pendentes | **16** |
+| Progresso Geral | **46%** |
 
 ```
-Progresso: [██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 12%
+Progresso: [███████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 46%
 ```
 
 ---
@@ -33,16 +34,16 @@ Progresso: [██████░░░░░░░░░░░░░░░░�
 | [SPEC-001](SPEC-001-configuracao-deepseek.md) | Configuração do Cliente DeepSeek | ✅ Concluído |
 | [SPEC-002](SPEC-002-catalogo-alimentos.md) | Catálogo de Alimentos (FoodCatalog) | ✅ Concluído |
 | [SPEC-003](SPEC-003-extracao-nl-json.md) | Serviço de Extração NL→JSON | ✅ Concluído |
-| [SPEC-004](SPEC-004-geracao-planos-ia.md) | Serviço de Geração de Planos via IA | 🔴 Pendente |
-| [SPEC-005](SPEC-005-pipeline-validacao.md) | Pipeline de Validação Pós-Geração | 🔴 Pendente |
-| [SPEC-006](SPEC-006-orquestrador.md) | Atualização do Orquestrador (DietPlannerUseCase) | 🔴 Pendente |
+| [SPEC-004](SPEC-004-geracao-planos-ia.md) | Serviço de Geração de Planos via IA | ✅ Concluído |
+| [SPEC-005](SPEC-005-pipeline-validacao.md) | Pipeline de Validação Pós-Geração | ✅ Concluído |
+| [SPEC-006](SPEC-006-orquestrador.md) | Atualização do Orquestrador (DietPlannerUseCase) | ✅ Concluído |
 | [SPEC-007](SPEC-007-endpoint-geracao.md) | Atualização do Endpoint de Geração | 🔴 Pendente |
-| [SPEC-008](SPEC-008-expansao-restricoes.md) | Expansão de Restrições e Condições Especiais | 🔴 Pendente |
+| [SPEC-008](SPEC-008-expansao-restricoes.md) | Expansão de Restrições e Condições Especiais | 🟡 Parcial |
 | [SPEC-009](SPEC-009-frontend-input.md) | Frontend — Página de Input com Linguagem Natural | 🔴 Pendente |
 | [SPEC-010](SPEC-010-frontend-resultados.md) | Frontend — Tela de Resultados com 3 Planos | 🔴 Pendente |
-| [SPEC-011](SPEC-011-tratamento-erros.md) | Tratamento de Erros e Resiliência da LLM | 🔴 Pendente |
-| [SPEC-012](SPEC-012-configuracao-ambiente.md) | Configuração de Ambiente e Segurança | 🔴 Pendente |
-| [SPEC-013](SPEC-013-logs-observabilidade.md) | Logs e Observabilidade Básica | 🔴 Pendente |
+| [SPEC-011](SPEC-011-tratamento-erros.md) | Tratamento de Erros e Resiliência da LLM | 🟡 Parcial |
+| [SPEC-012](SPEC-012-configuracao-ambiente.md) | Configuração de Ambiente e Segurança | 🟡 Parcial |
+| [SPEC-013](SPEC-013-logs-observabilidade.md) | Logs e Observabilidade Básica | 🟡 Parcial |
 
 ---
 
