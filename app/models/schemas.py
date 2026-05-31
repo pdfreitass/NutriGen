@@ -228,3 +228,52 @@ class PerfilExtraido(BaseModel):
     restricoes: List[str] = Field(default_factory=list, description="Alimentos que o usuário NÃO come / tem alergia")
     condicoes: List[str] = Field(default_factory=list, description="Condições especiais detectadas")
     extra: Dict[str, Any] = Field(default_factory=dict, description="Dados adicionais extraídos")
+
+
+# ─── SPEC-004: Geração de Planos via IA ─────────────────────
+
+class MetasNutricionais(BaseModel):
+    """Metas nutricionais calculadas deterministicamente (TMB, GET, macros)."""
+    tmb: float = Field(..., description="Taxa Metabólica Basal em kcal")
+    get_calorico: float = Field(..., description="Gasto Energético Total em kcal")
+    proteina_g: float = Field(..., description="Meta de proteína em gramas")
+    carboidrato_g: float = Field(..., description="Meta de carboidrato em gramas")
+    gordura_g: float = Field(..., description="Meta de gordura em gramas")
+
+
+class ItemGerado(BaseModel):
+    """Alimento individual dentro de uma refeição gerada pela IA."""
+    nome: str = Field(..., description="Nome do alimento (deve existir no catálogo)")
+    quantidade_g: float = Field(..., ge=10, le=1000, description="Quantidade em gramas")
+    proteina_g: float = Field(..., ge=0, description="Proteína calculada para esta porção")
+    carboidrato_g: float = Field(..., ge=0, description="Carboidrato calculado para esta porção")
+    gordura_g: float = Field(..., ge=0, description="Gordura calculada para esta porção")
+    calorias_kcal: float = Field(..., ge=0, description="Calorias calculadas para esta porção")
+
+
+class RefeicaoGerada(BaseModel):
+    """Refeição gerada pela IA, contendo alimentos e horário sugerido."""
+    nome: str = Field(..., description="Nome da refeição (ex: Café da Manhã)")
+    horario: Optional[str] = Field(None, description="Horário sugerido (ex: 07:00)")
+    alimentos: List[ItemGerado] = Field(..., min_length=1, max_length=8, description="Alimentos desta refeição")
+
+
+class PlanoGerado(BaseModel):
+    """Um plano alimentar completo gerado pela IA."""
+    nome: str = Field(..., description="Nome do plano (ex: Tradicional Brasileiro)")
+    descricao: str = Field(..., min_length=10, description="Descrição do plano (2-4 frases)")
+    eixo: Literal["tradicional", "funcional", "pratico"] = Field(
+        ..., description="Eixo de diferenciação"
+    )
+    objetivo: str = Field(..., description="Objetivo da dieta")
+    calorias_estimadas: float = Field(..., description="Calorias totais estimadas pelo modelo")
+    refeicoes: List[RefeicaoGerada] = Field(
+        ..., min_length=3, max_length=7, description="Refeições do plano (3-7)"
+    )
+
+
+class PlanosGerados(BaseModel):
+    """Container para os 3 planos gerados pela IA."""
+    planos: List[PlanoGerado] = Field(
+        ..., min_length=3, max_length=3, description="Exatamente 3 planos gerados"
+    )
