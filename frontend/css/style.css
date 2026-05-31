@@ -1102,3 +1102,290 @@ body {
 .loading-text.stage-4 {
     animation: fadeIn 0.5s ease;
 }
+
+/* =============================================
+   SPEC-010: Results — Plan Cards & Accordion
+   ============================================= */
+
+/* Plans Grid (desktop ≥ 768px) */
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin: 1.5rem 0;
+}
+
+.plans-accordion {
+    display: none;
+}
+
+/* Plan Card v2 */
+.plan-card-v2 {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.plan-card-v2:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.plan-v2-header {
+    padding: 1.25rem 1rem 0.75rem;
+    border-bottom: 2px solid var(--gray-100);
+}
+
+.plan-v2-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-bg);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    margin-bottom: 0.5rem;
+}
+
+.plan-v2-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0 0 0.25rem;
+}
+
+.plan-v2-desc {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Macro cards within plan */
+.plan-v2-macros {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.macro-card {
+    text-align: center;
+    padding: 0.5rem 0.25rem;
+    background: var(--white);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-100);
+}
+
+.macro-card-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.macro-card-label {
+    font-size: 0.65rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.macro-card-kcal {
+    background: var(--primary-bg);
+    border-color: var(--primary-light);
+}
+
+.macro-card-kcal .macro-card-value {
+    color: var(--primary);
+}
+
+/* Meals within plan */
+.plan-v2-meals {
+    padding: 0.75rem 1rem;
+    flex: 1;
+    overflow-y: auto;
+    max-height: 500px;
+}
+
+.meal-v2 {
+    margin-bottom: 0.75rem;
+}
+
+.meal-v2-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.35rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.meal-v2-time {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--gray-400);
+}
+
+.meal-v2-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.7rem;
+}
+
+.meal-v2-table th {
+    background: var(--primary-dark);
+    color: var(--white);
+    padding: 0.25rem 0.3rem;
+    font-weight: 600;
+    text-align: center;
+    font-size: 0.65rem;
+}
+
+.meal-v2-table td {
+    padding: 0.2rem 0.3rem;
+    text-align: center;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+}
+
+.meal-v2-table td:first-child {
+    text-align: left;
+    font-weight: 500;
+    color: var(--gray-800);
+}
+
+.meal-v2-table tr:nth-child(even) td {
+    background: var(--gray-50);
+}
+
+/* Plan actions */
+.plan-v2-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--gray-100);
+    background: var(--gray-50);
+}
+
+.plan-v2-feedback {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.feedback-btn {
+    background: none;
+    border: 1px solid var(--gray-200);
+    border-radius: 20px;
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+}
+
+.feedback-btn:hover {
+    background: var(--gray-100);
+}
+
+/* ═══ Accordion (mobile < 768px) ═══ */
+.accordion-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--primary);
+}
+
+.accordion-tab {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    border: none;
+    background: var(--gray-100);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--gray-600);
+    transition: background 0.2s, color 0.2s;
+}
+
+.accordion-tab.active {
+    background: var(--primary);
+    color: var(--white);
+    font-weight: 600;
+}
+
+.accordion-tab:hover:not(.active) {
+    background: var(--gray-200);
+}
+
+.accordion-panel {
+    display: none;
+}
+
+.accordion-panel.active {
+    display: block;
+}
+
+/* ═══ Avisos section ═══ */
+.avisos-section {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    background: var(--warning-bg);
+    border: 1px solid var(--warning);
+    border-radius: var(--radius-md);
+}
+
+.avisos-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--warning);
+    margin: 0 0 0.5rem;
+}
+
+.avisos-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.8rem;
+    color: var(--gray-700);
+    line-height: 1.5;
+}
+
+.avisos-list li {
+    margin-bottom: 0.25rem;
+}
+
+/* ═══ Results Actions ═══ */
+.results-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
+}
+
+/* ═══ Disclaimer ═══ */
+.results-disclaimer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--gray-400);
+    padding: 1rem;
+    border-top: 1px solid var(--gray-200);
+    margin-top: 1.5rem;
+}
+
+/* ═══ Responsive ═══ */
+@media (max-width: 767px) {
+    .plans-grid {
+        display: none;
+    }
+
+    .plans-accordion {
+        display: block;
+        margin: 1rem 0;
+    }
+}

@@ -356,11 +356,12 @@ function showDietError(msg) {
     }
 }
 
-// ─── Results Rendering ────────────────────────
+// ─── Results Rendering (SPEC-010) ──────────────
 function renderResults(result) {
     dom.resultsContent.innerHTML = '';
 
-    // Summary stats
+    // ═══ Summary Section ═══
+    const p = result.paciente;
     const summary = document.createElement('div');
     summary.className = 'result-summary';
     summary.innerHTML = `
@@ -369,156 +370,223 @@ function renderResults(result) {
             <div class="stat-label">TMB (kcal/dia)</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">${result.paciente.peso_kg.toFixed(1)} kg</div>
+            <div class="stat-value">${result.get_calorico.toFixed(0)}</div>
+            <div class="stat-label">GET (kcal/dia)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${_getObjetivoLabel(result.objetivo)}</div>
+            <div class="stat-label">Objetivo</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${(p.peso_kg || 0).toFixed(1)} kg</div>
             <div class="stat-label">Peso</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">${result.paciente.altura_cm.toFixed(0)} cm</div>
+            <div class="stat-value">${(p.altura_cm || 0).toFixed(0)} cm</div>
             <div class="stat-label">Altura</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">${result.paciente.idade} anos</div>
-            <div class="stat-label">Idade</div>
         </div>
     `;
     dom.resultsContent.appendChild(summary);
 
-    // Patient name
-    const patientInfo = document.createElement('p');
-    patientInfo.style.cssText = 'font-size: 0.875rem; color: var(--gray-500); margin-bottom: 1.5rem;';
-    patientInfo.textContent = `Paciente: ${result.paciente.nome} | Sexo: ${result.paciente.sexo}`;
-    dom.resultsContent.appendChild(patientInfo);
+    // ═══ Plans Grid ═══
+    const plansGrid = document.createElement('div');
+    plansGrid.className = 'plans-grid';
 
-    // Plans
-    result.planos.forEach((plano, index) => {
-        const planCard = document.createElement('div');
-        planCard.className = 'plan-card';
-
-        // Header
-        const header = document.createElement('div');
-        header.className = 'plan-header';
-        header.innerHTML = `
-            <span class="plan-name">${index + 1}. ${plano.nome}</span>
-            <span class="plan-badge">${getObjetivoLabel(plano.objetivo)}</span>
-        `;
-        planCard.appendChild(header);
-
-        // Body
-        const body = document.createElement('div');
-        body.className = 'plan-body';
-
-        // GET Calórico
-        const getInfo = document.createElement('p');
-        getInfo.style.cssText = 'font-size: 0.875rem; color: var(--gray-500); margin-bottom: 1rem;';
-        getInfo.innerHTML = `<strong>GET:</strong> ${plano.get_calorico.toFixed(0)} kcal/dia | <strong>Nível:</strong> ${getNivelLabel(plano.nivel_atividade)}`;
-        body.appendChild(getInfo);
-
-        // Macros
-        const macrosDiv = document.createElement('div');
-        macrosDiv.className = 'plan-macros';
-        macrosDiv.innerHTML = `
-            <div class="macro-item">
-                <div class="macro-value">${plano.macros.proteina_g.toFixed(1)}g</div>
-                <div class="macro-label">Proteína</div>
-            </div>
-            <div class="macro-item">
-                <div class="macro-value">${plano.macros.carboidrato_g.toFixed(1)}g</div>
-                <div class="macro-label">Carboidrato</div>
-            </div>
-            <div class="macro-item">
-                <div class="macro-value">${plano.macros.gordura_g.toFixed(1)}g</div>
-                <div class="macro-label">Gordura</div>
-            </div>
-        `;
-        body.appendChild(macrosDiv);
-
-        // Refeições
-        const mealsDiv = document.createElement('div');
-        mealsDiv.className = 'plan-meals';
-
-        plano.refeicoes.forEach(refeicao => {
-            const mealGroup = document.createElement('div');
-            mealGroup.className = 'meal-group';
-
-            const mealTitle = document.createElement('div');
-            mealTitle.className = 'meal-title';
-            mealTitle.textContent = refeicao.nome;
-            mealGroup.appendChild(mealTitle);
-
-            const table = document.createElement('table');
-            table.className = 'meal-table';
-
-            // Table header
-            const thead = document.createElement('thead');
-            thead.innerHTML = `
-                <tr>
-                    <th>Alimento</th>
-                    <th>Qtd (g)</th>
-                    <th>PTN (g)</th>
-                    <th>CHO (g)</th>
-                    <th>GOR (g)</th>
-                    <th>kcal</th>
-                </tr>
-            `;
-            table.appendChild(thead);
-
-            // Table body
-            const tbody = document.createElement('tbody');
-            refeicao.alimentos.forEach(alimento => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${alimento.nome}</strong></td>
-                    <td>${alimento.quantidade_g.toFixed(0)}</td>
-                    <td>${alimento.proteina_g.toFixed(1)}</td>
-                    <td>${alimento.carboidrato_g.toFixed(1)}</td>
-                    <td>${alimento.gordura_g.toFixed(1)}</td>
-                    <td>${alimento.calorias_kcal.toFixed(0)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            table.appendChild(tbody);
-
-            mealGroup.appendChild(table);
-            mealsDiv.appendChild(mealGroup);
-        });
-
-        body.appendChild(mealsDiv);
-        planCard.appendChild(body);
-        dom.resultsContent.appendChild(planCard);
+    result.planos.forEach((plano, idx) => {
+        const card = _buildPlanCard(plano, idx);
+        plansGrid.appendChild(card);
     });
 
-    // PDF Download
-    const pdfArea = document.createElement('div');
-    pdfArea.className = 'pdf-download-area';
-    pdfArea.innerHTML = `
-        <p style="margin-bottom: 1rem; color: var(--gray-600);">
-            Baixe o PDF completo com todos os planos alimentares formatados.
-        </p>
-        <a href="${API_BASE}${result.pdf_url}" target="_blank" class="btn btn-success btn-lg">
-            📄 Baixar PDF
-        </a>
+    dom.resultsContent.appendChild(plansGrid);
+
+    // ═══ Accordion (mobile) ═══
+    const accordion = document.createElement('div');
+    accordion.className = 'plans-accordion';
+
+    const tabNames = ['Tradicional', 'Funcional', 'Prático'];
+    const tabIcons = ['🍛', '🥗', '⏱️'];
+
+    // Tabs
+    const tabs = document.createElement('div');
+    tabs.className = 'accordion-tabs';
+    tabNames.forEach((name, i) => {
+        const tab = document.createElement('button');
+        tab.className = 'accordion-tab' + (i === 0 ? ' active' : '');
+        tab.textContent = `${tabIcons[i]} ${name}`;
+        tab.dataset.tab = i;
+        tab.addEventListener('click', () => _switchAccordionTab(i));
+        tabs.appendChild(tab);
+    });
+    accordion.appendChild(tabs);
+
+    // Panels
+    result.planos.forEach((plano, idx) => {
+        const panel = document.createElement('div');
+        panel.className = 'accordion-panel' + (idx === 0 ? ' active' : '');
+        panel.dataset.panel = idx;
+        const card = _buildPlanCard(plano, idx, true);
+        panel.appendChild(card);
+        accordion.appendChild(panel);
+    });
+
+    dom.resultsContent.appendChild(accordion);
+
+    // ═══ Avisos (SPEC-008) ═══
+    if (result.avisos && result.avisos.length > 0) {
+        const avisosSection = document.createElement('div');
+        avisosSection.className = 'avisos-section';
+        avisosSection.innerHTML = `
+            <h3 class="avisos-title">⚠️ Avisos Importantes</h3>
+            <ul class="avisos-list">
+                ${result.avisos.map(a => `<li>${a}</li>`).join('')}
+            </ul>
+        `;
+        dom.resultsContent.appendChild(avisosSection);
+    }
+
+    // ═══ Global Actions ═══
+    const actions = document.createElement('div');
+    actions.className = 'results-actions';
+    actions.innerHTML = `
+        <button class="btn btn-secondary" onclick="document.getElementById('btn-new-diet').click()">
+            🔄 Gerar Novamente
+        </button>
     `;
-    dom.resultsContent.appendChild(pdfArea);
+    if (result.pdf_url) {
+        actions.innerHTML += `
+            <a href="${API_BASE}${result.pdf_url}" target="_blank" class="btn btn-success">
+                📄 Baixar PDF Completo
+            </a>
+        `;
+    }
+    dom.resultsContent.appendChild(actions);
+
+    // ═══ Disclaimer (RN-070) ═══
+    const disclaimer = document.createElement('p');
+    disclaimer.className = 'results-disclaimer';
+    disclaimer.textContent = '⚠️ Este plano alimentar é gerado por inteligência artificial e tem caráter informativo. Não substitui consulta com nutricionista ou médico.';
+    dom.resultsContent.appendChild(disclaimer);
 
     hideLoading();
 }
 
-function getObjetivoLabel(nivel) {
-    const map = {
-        'perda_de_peso': '📉 Perda de Peso',
-        'manutencao': '⚖️ Manutenção',
-        'ganho_de_massa': '💪 Ganho de Massa',
+function _buildPlanCard(plano, idx, isAccordion = false) {
+    const card = document.createElement('div');
+    card.className = 'plan-card-v2';
+
+    // Compute totals
+    let totalProt = 0, totalCarbo = 0, totalGord = 0, totalKcal = 0;
+    plano.refeicoes.forEach(ref => {
+        ref.alimentos.forEach(a => {
+            totalProt += a.proteina_g || 0;
+            totalCarbo += a.carboidrato_g || 0;
+            totalGord += a.gordura_g || 0;
+            totalKcal += a.calorias_kcal || 0;
+        });
+    });
+
+    const eixoLabels = {
+        tradicional: 'Tradicional Brasileiro',
+        funcional: 'Funcional & Nutrientes',
+        pratico: 'Prático & Rápido',
     };
-    return map[nivel] || nivel;
+    const eixoIcons = {
+        tradicional: '🍛',
+        funcional: '🥗',
+        pratico: '⏱️',
+    };
+
+    card.innerHTML = `
+        <div class="plan-v2-header">
+            <span class="plan-v2-badge">${eixoIcons[plano.eixo] || '📋'} ${eixoLabels[plano.eixo] || plano.eixo}</span>
+            <h3 class="plan-v2-name">${plano.nome}</h3>
+            <p class="plan-v2-desc">${plano.descricao || ''}</p>
+        </div>
+
+        <div class="plan-v2-macros">
+            <div class="macro-card">
+                <div class="macro-card-value">${totalProt.toFixed(0)}g</div>
+                <div class="macro-card-label">Proteína</div>
+            </div>
+            <div class="macro-card">
+                <div class="macro-card-value">${totalCarbo.toFixed(0)}g</div>
+                <div class="macro-card-label">Carboidrato</div>
+            </div>
+            <div class="macro-card">
+                <div class="macro-card-value">${totalGord.toFixed(0)}g</div>
+                <div class="macro-card-label">Gordura</div>
+            </div>
+            <div class="macro-card macro-card-kcal">
+                <div class="macro-card-value">${totalKcal.toFixed(0)}</div>
+                <div class="macro-card-label">kcal totais</div>
+            </div>
+        </div>
+
+        <div class="plan-v2-meals">
+            ${plano.refeicoes.map(ref => `
+                <div class="meal-v2">
+                    <div class="meal-v2-title">
+                        ${ref.nome}
+                        ${ref.horario ? `<span class="meal-v2-time">${ref.horario}</span>` : ''}
+                    </div>
+                    <table class="meal-v2-table">
+                        <thead>
+                            <tr>
+                                <th>Alimento</th>
+                                <th>g</th>
+                                <th>P</th>
+                                <th>C</th>
+                                <th>G</th>
+                                <th>kcal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ref.alimentos.map(a => `
+                                <tr>
+                                    <td>${a.nome}</td>
+                                    <td>${(a.quantidade_g || 0).toFixed(0)}</td>
+                                    <td>${(a.proteina_g || 0).toFixed(1)}</td>
+                                    <td>${(a.carboidrato_g || 0).toFixed(1)}</td>
+                                    <td>${(a.gordura_g || 0).toFixed(1)}</td>
+                                    <td>${(a.calorias_kcal || 0).toFixed(0)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `).join('')}
+        </div>
+
+        <div class="plan-v2-actions">
+            <button class="btn btn-sm btn-outline" onclick="_copyPlanToClipboard(this)" data-plan-idx="${idx}">
+                📋 Copiar
+            </button>
+            <div class="plan-v2-feedback">
+                <button class="feedback-btn" title="Gostei!">👍</button>
+                <button class="feedback-btn" title="Não gostei">👎</button>
+            </div>
+        </div>
+    `;
+
+    return card;
 }
 
-function getNivelLabel(nivel) {
+function _switchAccordionTab(index) {
+    document.querySelectorAll('.accordion-tab').forEach((t, i) => {
+        t.classList.toggle('active', i === index);
+    });
+    document.querySelectorAll('.accordion-panel').forEach((p, i) => {
+        p.classList.toggle('active', i === index);
+    });
+}
+
+function _getObjetivoLabel(obj) {
     const map = {
-        'sedentario': 'Sedentário',
-        'moderado': 'Moderado',
-        'ativo': 'Ativo',
+        'perda_de_peso': '📉 Perda',
+        'manutencao': '⚖️ Manutenção',
+        'ganho_de_massa': '💪 Ganho',
     };
-    return map[nivel] || nivel;
+    return map[obj] || obj || '—';
 }
 
 // ─── Alert helper ─────────────────────────────

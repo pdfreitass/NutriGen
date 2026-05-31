@@ -13,14 +13,14 @@
 | Métrica | Valor |
 |---------|:----:|
 | Total de SPECs | **25** |
-| Concluídas | **9** |
+| Concluídas | **10** |
 | Parciais | **2** |
 | Em andamento | **0** |
-| Pendentes | **14** |
-| Progresso Geral | **69%** |
+| Pendentes | **13** |
+| Progresso Geral | **77%** |
 
 ```
-Progresso: [██████████████████████████████████░░░░░░░░░░░░░░░░] 69%
+Progresso: [██████████████████████████████████████░░░░░░░░░░] 77%
 ```
 
 ---
@@ -40,7 +40,7 @@ Progresso: [██████████████████████�
 | [SPEC-007](SPEC-007-endpoint-geracao.md) | Atualização do Endpoint de Geração | ✅ Concluído |
 | [SPEC-008](SPEC-008-expansao-restricoes.md) | Expansão de Restrições e Condições Especiais | ✅ Concluído |
 | [SPEC-009](SPEC-009-frontend-input.md) | Frontend — Página de Input com Linguagem Natural | ✅ Concluído |
-| [SPEC-010](SPEC-010-frontend-resultados.md) | Frontend — Tela de Resultados com 3 Planos | 🔴 Pendente |
+| [SPEC-010](SPEC-010-frontend-resultados.md) | Frontend — Tela de Resultados com 3 Planos | ✅ Concluído |
 | [SPEC-011](SPEC-011-tratamento-erros.md) | Tratamento de Erros e Resiliência da LLM | 🟡 Parcial |
 | [SPEC-012](SPEC-012-configuracao-ambiente.md) | Configuração de Ambiente e Segurança | 🟡 Parcial |
 | [SPEC-013](SPEC-013-logs-observabilidade.md) | Logs e Observabilidade Básica | 🟡 Parcial |
