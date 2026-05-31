@@ -253,9 +253,11 @@ class ItemGerado(BaseModel):
 
 class RefeicaoGerada(BaseModel):
     """Refeição gerada pela IA, contendo alimentos e horário sugerido."""
-    nome: str = Field(..., description="Nome da refeição (ex: Café da Manhã)")
+    nome: str = Field(default="Refeição", description="Nome da refeição (ex: Café da Manhã)")
     horario: Optional[str] = Field(None, description="Horário sugerido (ex: 07:00)")
-    alimentos: List[ItemGerado] = Field(..., min_length=1, max_length=8, description="Alimentos desta refeição")
+    alimentos: List[ItemGerado] = Field(
+        default_factory=list, description="Alimentos desta refeição"
+    )
 
 
 class PlanoGerado(BaseModel):
@@ -268,7 +270,7 @@ class PlanoGerado(BaseModel):
     objetivo: str = Field(..., description="Objetivo da dieta")
     calorias_estimadas: float = Field(..., description="Calorias totais estimadas pelo modelo")
     refeicoes: List[RefeicaoGerada] = Field(
-        ..., min_length=3, max_length=7, description="Refeições do plano (3-7)"
+        default_factory=list, description="Refeições do plano (validado pelo PlanValidator)"
     )
 
 

@@ -467,7 +467,7 @@ class PlanGeneratorService:
         calorias = float(dados.get("calorias_estimadas", 0))
 
         # Parsear refeições
-        refeicoes_raw = dados.get("refeicoes", [])
+        refeicoes_raw = dados.get("refeicoes") or dados.get("meals") or dados.get("meal_plan") or []
         if not isinstance(refeicoes_raw, list):
             refeicoes_raw = []
 
@@ -500,7 +500,7 @@ class PlanGeneratorService:
         nome = dados.get("nome", "Refeição")
         horario = dados.get("horario")
 
-        alimentos_raw = dados.get("alimentos", [])
+        alimentos_raw = dados.get("alimentos") or dados.get("foods") or dados.get("items") or []
         if not isinstance(alimentos_raw, list):
             alimentos_raw = []
 
