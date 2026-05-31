@@ -25,6 +25,8 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Optional
 
+from fastapi import HTTPException
+
 from app.exceptions import (
     CamposObrigatoriosAusentesError,
     DeepSeekError,
@@ -48,6 +50,7 @@ from app.services.extractor_service import ExtractorService
 from app.services.nutrition_calculator import NutritionCalculator
 from app.services.plan_generator_service import PlanGeneratorService
 from app.services.plan_validator import PlanValidator
+from app.services.restriction_expander import RestrictionExpander
 from app.utils.pdf_generator import gerar_pdf_adaptado
 
 logger = logging.getLogger(__name__)
@@ -70,7 +73,9 @@ class GerarPlanosUseCase:
         self._calculator = NutritionCalculator()
         self._generator = PlanGeneratorService()
         self._validator = PlanValidator()
+        self._expander = RestrictionExpander()
 
+    # ─── Método principal ─────────────────────────────
     # ─── Método principal ─────────────────────────────
 
     def executar(self, texto: str) -> dict:
@@ -114,12 +119,21 @@ class GerarPlanosUseCase:
             logger.warning("[%s] GET fora do intervalo seguro", request_id)
             raise
 
+        # ── Etapa 2.5: Expandir restrições ──────────────
+        expanded = self._expander.expandir(
+            perfil.restricoes, perfil.condicoes, food_catalog, texto
+        )
+
+        # RN-073: Bloquear se transtorno alimentar detectado
+        if expanded.bloqueado:
+            logger.warning("[%s] Geração bloqueada: %s", request_id, expanded.motivo_bloqueio)
+            raise HTTPException(status_code=400, detail=expanded.motivo_bloqueio)
+
         # ── Etapa 3: Geração IA ───────────────────────
         planos = self._gerar_com_retry(perfil, metas, texto, request_id)
 
         # ── Etapa 4: Validação ────────────────────────
-        restricoes_expandidas = self._generator._expandir_restricoes(perfil.restricoes)
-        result = self._validar(planos, metas, restricoes_expandidas, request_id)
+        result = self._validar(planos, metas, expanded.alimentos_proibidos, request_id)
 
         # ── Etapa 5: Retry se necessário ──────────────
         if not result.aprovado:
@@ -171,6 +185,8 @@ class GerarPlanosUseCase:
             "planos": result.planos_corrigidos.planos,
             "pdf_url": pdf_url,
             "request_id": request_id,
+            "avisos": expanded.avisos,
+            "severidade_restricoes": expanded.severidade,
         }
 
     # ═══════════════════════════════════════════════════════

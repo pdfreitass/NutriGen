@@ -1,6 +1,6 @@
 # SPEC-008: Expansão de Restrições e Condições Especiais
 
-**Status:** 🔴 Pendente
+**Status:** ✅ Concluído
 **Fase:** 1 — MVP
 
 ---

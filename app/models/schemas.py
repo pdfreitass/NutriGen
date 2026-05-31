@@ -312,3 +312,37 @@ class DietGenerateResponseV2(BaseModel):
     planos: list = Field(..., description="3 planos alimentares gerados")
     pdf_url: Optional[str] = Field(None, description="URL para download do PDF")
     request_id: str = Field(..., description="UUID da requisição para suporte")
+    avisos: list[str] = Field(
+        default_factory=list,
+        description="Avisos de segurança e recomendações (RN-070, RN-021, etc.)",
+    )
+    severidade_restricoes: str = Field(
+        default="preferencia",
+        description="Nível de severidade das restrições detectadas",
+    )
+
+
+# ─── SPEC-008: Expansão de Restrições ────────────────────
+
+class ExpandedRestrictions(BaseModel):
+    """Restrições expandidas com classificação de severidade e avisos."""
+    alimentos_proibidos: list[str] = Field(
+        default_factory=list,
+        description="Lista concreta de alimentos proibidos (nomes exatos)",
+    )
+    severidade: str = Field(
+        default="preferencia",
+        description="Nível de severidade: alergia, conviccao, preferencia",
+    )
+    avisos: list[str] = Field(
+        default_factory=list,
+        description="Avisos obrigatórios para o usuário (RN-021, RN-022, RN-023, RN-070-072)",
+    )
+    bloqueado: bool = Field(
+        default=False,
+        description="True se a geração deve ser bloqueada (ex: transtorno alimentar)",
+    )
+    motivo_bloqueio: str = Field(
+        default="",
+        description="Motivo do bloqueio, se aplicável",
+    )
