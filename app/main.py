@@ -13,6 +13,10 @@ from app.middleware.rate_limit import rate_limit_middleware
 from app.middleware.request_id import request_id_middleware
 from app.middleware.security_headers import security_headers_middleware
 from app.config import APP_ENV
+from app.logging_config import setup_logging
+
+# Configurar logging estruturado (SPEC-013)
+setup_logging()
 
 
 @asynccontextmanager
