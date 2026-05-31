@@ -15,11 +15,13 @@ from typing import Optional
 
 from fastapi import Request, HTTPException
 
+from app.config import RATE_LIMIT_ANON as _CFG_ANON, RATE_LIMIT_AUTH as _CFG_AUTH
+
 # ─── Configuração ──────────────────────────────────────────
 
-RATE_LIMIT_ANON = 10      # requisições por minuto (anônimo)
-RATE_LIMIT_AUTH = 30      # requisições por minuto (autenticado)
-WINDOW_SECONDS = 60       # janela de tempo em segundos
+RATE_LIMIT_ANON = _CFG_ANON      # do .env (default 10)
+RATE_LIMIT_AUTH = _CFG_AUTH      # do .env (default 30)
+WINDOW_SECONDS = 60              # janela de tempo em segundos
 
 
 # ─── Armazenamento em memória ──────────────────────────────

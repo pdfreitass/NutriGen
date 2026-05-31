@@ -11,6 +11,8 @@ from app.routers.diet import router as diet_router
 from app.routers.auth import router as auth_router
 from app.middleware.rate_limit import rate_limit_middleware
 from app.middleware.request_id import request_id_middleware
+from app.middleware.security_headers import security_headers_middleware
+from app.config import APP_ENV
 
 
 @asynccontextmanager
@@ -33,13 +35,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS - permitir todas origens em desenvolvimento
+# CORS — restrito a localhost em desenvolvimento (SPEC-012)
+_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:3000",  # frontend dev server (se aplicável)
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
 )
+
+# Security headers (SPEC-012)
+@app.middleware("http")
+async def security_headers_handler(request: Request, call_next):
+    """Adiciona headers de segurança em todas as respostas."""
+    response = await security_headers_middleware(request, call_next)
+    return response
 
 # Request ID — deve vir ANTES do rate limiting (SPEC-011)
 @app.middleware("http")

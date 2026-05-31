@@ -1,6 +1,6 @@
 # SPEC-012: Configuração de Ambiente e Segurança
 
-**Status:** 🔴 Pendente
+**Status:** ✅ Concluído
 **Fase:** 1 — MVP
 
 ---
