@@ -651,6 +651,24 @@ function _getObjetivoLabel(obj) {
     return map[obj] || obj || '—';
 }
 
+// Clipboard copy (SPEC-010)
+function _copyPlanToClipboard(btn) {
+    const card = btn.closest('.plan-card-v2');
+    if (!card) return;
+
+    // Extract text from the card
+    const text = card.innerText.trim();
+    navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = '✅ Copiado!';
+        setTimeout(() => { btn.textContent = original; }, 2000);
+    }).catch(() => {
+        // Fallback para navegadores sem clipboard API
+        btn.textContent = '❌ Erro';
+        setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000);
+    });
+}
+
 // ─── Alert helper ─────────────────────────────
 function showAlert(type, message) {
     const alertDiv = document.createElement('div');

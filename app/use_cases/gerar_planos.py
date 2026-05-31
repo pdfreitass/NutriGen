@@ -76,7 +76,6 @@ class GerarPlanosUseCase:
         self._expander = RestrictionExpander()
 
     # ─── Método principal ─────────────────────────────
-    # ─── Método principal ─────────────────────────────
 
     def executar(self, texto: str) -> dict:
         """Executa o fluxo completo de geração de planos.
@@ -145,7 +144,7 @@ class GerarPlanosUseCase:
             )
             try:
                 planos = self._gerar(perfil, metas, texto, request_id)
-                result = self._validar(planos, metas, restricoes_expandidas, request_id)
+                result = self._validar(planos, metas, expanded.alimentos_proibidos, request_id)
 
                 if not result.aprovado:
                     raise PlanValidationError(
