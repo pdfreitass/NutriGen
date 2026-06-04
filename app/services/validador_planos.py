@@ -459,16 +459,22 @@ class PlanValidator:
             calorias_totais = totais_apos["calorias_kcal"]
 
             if calorias_totais < metas.get_calorico * _CALORIA_TOLERANCIA_MIN:
-                acum.adicionar_grave(
+                fator = (metas.get_calorico * _CALORIA_TOLERANCIA_MIN) / max(calorias_totais, 1)
+                self._escalar_quantidades(plano, fator)
+                acum.adicionar(
                     f"Plano {i + 1} '{plano.get('nome', '?')}': "
                     f"calorias totais ({calorias_totais:.0f} kcal) abaixo de "
-                    f"95% do GET ({metas.get_calorico:.0f} kcal)."
+                    f"95% do GET ({metas.get_calorico:.0f} kcal) — "
+                    f"quantidades escaladas em {fator:.1%}."
                 )
             elif calorias_totais > metas.get_calorico * _CALORIA_TOLERANCIA_MAX:
-                acum.adicionar_grave(
+                fator = (metas.get_calorico * _CALORIA_TOLERANCIA_MAX) / max(calorias_totais, 1)
+                self._escalar_quantidades(plano, fator)
+                acum.adicionar(
                     f"Plano {i + 1} '{plano.get('nome', '?')}': "
                     f"calorias totais ({calorias_totais:.0f} kcal) acima de "
-                    f"105% do GET ({metas.get_calorico:.0f} kcal)."
+                    f"105% do GET ({metas.get_calorico:.0f} kcal) — "
+                    f"quantidades escaladas em {fator:.1%}."
                 )
 
     def _ajustar_macro(
@@ -483,6 +489,16 @@ class PlanValidator:
             return
 
         fator = meta / atual
+        for refeicao in plano.get("refeicoes", []):
+            for alimento in refeicao.get("alimentos", []):
+                nova_qtd = alimento["quantidade_g"] * fator
+                nova_qtd = max(_QUANTIDADE_MINIMA_G, min(nova_qtd, _QUANTIDADE_MAXIMA_G))
+                fator_real = nova_qtd / alimento["quantidade_g"] if alimento["quantidade_g"] > 0 else 1.0
+                alimento["quantidade_g"] = round(nova_qtd, 1)
+                self._reescalar_macros(alimento, fator_real)
+
+    def _escalar_quantidades(self, plano: dict, fator: float) -> None:
+        """Escala uniformemente todas as quantidades de um plano pelo fator."""
         for refeicao in plano.get("refeicoes", []):
             for alimento in refeicao.get("alimentos", []):
                 nova_qtd = alimento["quantidade_g"] * fator
@@ -545,7 +561,7 @@ class PlanValidator:
                 sobreposicao = len(intersecao) / len(uniao)
 
                 if sobreposicao > _SOBREPOSICAO_MAXIMA:
-                    acum.adicionar_grave(
+                    acum.adicionar(
                         f"Sobreposição de {sobreposicao:.0%} entre "
                         f"Plano {i + 1} e Plano {j + 1} "
                         f"(máximo {_SOBREPOSICAO_MAXIMA:.0%}). "
