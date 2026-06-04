@@ -1,4 +1,4 @@
-# SPEC-017: Métricas e Analytics Básicos
+# SPEC-043: Métricas e Analytics Básicos
 
 **Status:** ⚪ Pendente
 **Fase:** 2 — Refina a Experiência

@@ -1,4 +1,4 @@
-# SPEC-022: Chat Multi-Turno para Refinar Planos
+# SPEC-052: Chat Multi-Turno para Refinar Planos
 
 **Status:** ⚪ Pendente
 **Fase:** 3 — Escala e Personalização

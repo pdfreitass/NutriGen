@@ -1,4 +1,4 @@
-# SPEC-016: Regeneração Inteligente de Planos
+# SPEC-042: Regeneração Inteligente de Planos
 
 **Status:** ⚪ Pendente
 **Fase:** 2 — Refina a Experiência
@@ -33,5 +33,5 @@ Como usuário, quero gerar novos planos quando não gostar dos atuais, com garan
 
 ## Notas Técnicas
 
-- Na v1 (MVP), a regeneração é idêntica a uma nova chamada (sem `evitar_ids`). A SPEC-016 implementa a versão inteligente
+- Na v1 (MVP), a regeneração é idêntica a uma nova chamada (sem `evitar_ids`). A SPEC-042 implementa a versão inteligente
 - A lista de alimentos a evitar é montada pelo frontend a partir dos planos atuais e enviada como parâmetro opcional

@@ -1,4 +1,4 @@
-# SPEC-014: Histórico de Gerações para Usuários Autenticados
+# SPEC-040: Histórico de Gerações para Usuários Autenticados
 
 **Status:** ⚪ Pendente
 **Fase:** 2 — Refina a Experiência

@@ -1,4 +1,4 @@
-# SPEC-015: Sistema de Feedback de Planos
+# SPEC-041: Sistema de Feedback de Planos
 
 **Status:** ⚪ Pendente
 **Fase:** 2 — Refina a Experiência

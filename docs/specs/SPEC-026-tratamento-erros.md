@@ -1,4 +1,4 @@
-# SPEC-011: Tratamento de Erros e Resiliência da LLM
+# SPEC-026: Tratamento de Erros e Resiliência da LLM
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP

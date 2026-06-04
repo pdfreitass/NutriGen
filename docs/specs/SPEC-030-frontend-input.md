@@ -1,4 +1,4 @@
-# SPEC-009: Frontend — Página de Input com Linguagem Natural
+# SPEC-030: Frontend — Página de Input com Linguagem Natural
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP

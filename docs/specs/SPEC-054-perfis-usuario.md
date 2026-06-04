@@ -1,4 +1,4 @@
-# SPEC-024: Perfis de Usuário e Preferências Salvas
+# SPEC-054: Perfis de Usuário e Preferências Salvas
 
 **Status:** ⚪ Pendente
 **Fase:** 3 — Escala e Personalização

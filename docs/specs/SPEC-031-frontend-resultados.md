@@ -1,4 +1,4 @@
-# SPEC-010: Frontend — Tela de Resultados com 3 Planos
+# SPEC-031: Frontend — Tela de Resultados com 3 Planos
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP

@@ -1,4 +1,4 @@
-# SPEC-002: Catálogo de Alimentos (FoodCatalog)
+# SPEC-012: Catálogo de Alimentos (FoodCatalog)
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP

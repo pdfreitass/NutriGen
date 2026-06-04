@@ -1,4 +1,4 @@
-# SPEC-021: Múltiplos Provedores de IA
+# SPEC-051: Múltiplos Provedores de IA
 
 **Status:** ⚪ Pendente
 **Fase:** 3 — Escala e Personalização

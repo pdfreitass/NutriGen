@@ -1,4 +1,4 @@
-# SPEC-025: Sistema de Assinatura e Monetização
+# SPEC-055: Sistema de Assinatura e Monetização
 
 **Status:** ⚪ Pendente
 **Fase:** 3 — Escala e Personalização

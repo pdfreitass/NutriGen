@@ -1,8 +1,8 @@
-# SPEC-018: Ajuste de Prompts com Base em Feedback
+# SPEC-044: Ajuste de Prompts com Base em Feedback
 
 **Status:** ⚪ Pendente
 **Fase:** 2 — Refina a Experiência
-**Pré-requisito:** SPEC-015 (Sistema de Feedback) concluído
+**Pré-requisito:** SPEC-041 (Sistema de Feedback) concluído
 
 ---
 

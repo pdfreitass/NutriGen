@@ -1,4 +1,4 @@
-# SPEC-005: Pipeline de Validação Pós-Geração (PlanValidator)
+# SPEC-023: Pipeline de Validação Pós-Geração (PlanValidator)
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP

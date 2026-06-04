@@ -1,4 +1,4 @@
-# SPEC-008: Expansão de Restrições e Condições Especiais
+# SPEC-021: Expansão de Restrições e Condições Especiais
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP
@@ -42,7 +42,7 @@ Como usuário com restrições alimentares, quero que o sistema entenda restriç
 
 ## Notas Técnicas
 
-- A expansão DEVE rodar ANTES da montagem do prompt de geração (SPEC-004) e ANTES da validação (SPEC-005)
+- A expansão DEVE rodar ANTES da montagem do prompt de geração (SPEC-022) e ANTES da validação (SPEC-023)
 - O mapeamento de categorias usa `FoodCatalog` — se um alimento for adicionado ao `foods.json`, a expansão automaticamente o inclui
 - Para condições médicas (diabetes, hipertensão), o sistema não ajusta os planos — apenas adiciona o aviso obrigatório
 - Strings para detecção de transtorno alimentar: "anorexia", "bulimia", "compulsão alimentar", "transtorno alimentar", "não como há", "vômito"

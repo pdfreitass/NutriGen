@@ -1,4 +1,4 @@
-# SPEC-007: Atualização do Endpoint de Geração
+# SPEC-025: Atualização do Endpoint de Geração
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP

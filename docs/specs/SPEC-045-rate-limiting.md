@@ -1,4 +1,4 @@
-# SPEC-019: Rate Limiting Robusto e Proteção contra Abuso
+# SPEC-045: Rate Limiting Robusto e Proteção contra Abuso
 
 **Status:** ⚪ Pendente
 **Fase:** 2 — Refina a Experiência

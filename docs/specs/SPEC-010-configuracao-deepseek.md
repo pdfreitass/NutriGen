@@ -1,4 +1,4 @@
-# SPEC-001: Configuração do Cliente DeepSeek
+# SPEC-010: Configuração do Cliente DeepSeek
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP

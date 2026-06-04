@@ -1,4 +1,4 @@
-# SPEC-020: Dashboard Administrativo
+# SPEC-050: Dashboard Administrativo
 
 **Status:** ⚪ Pendente
 **Fase:** 3 — Escala e Personalização

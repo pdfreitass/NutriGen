@@ -1,4 +1,4 @@
-# SPEC-006: Atualização do Orquestrador (DietPlannerUseCase)
+# SPEC-024: Atualização do Orquestrador (DietPlannerUseCase)
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP

@@ -1,4 +1,4 @@
-# SPEC-003: Serviço de Extração NL→JSON
+# SPEC-020: Serviço de Extração NL→JSON
 
 **Status:** ✅ Concluído
 **Fase:** 1 — MVP

@@ -1,4 +1,4 @@
-# SPEC-023: Exportação Avançada (PDF Melhorado + CSV)
+# SPEC-053: Exportação Avançada (PDF Melhorado + CSV)
 
 **Status:** ⚪ Pendente
 **Fase:** 3 — Escala e Personalização
