@@ -57,7 +57,7 @@ O projeto está organizado em **25 especificações** agrupadas em **5 famílias
 | SPEC-030 | **Principal:** Frontend — Página de Input | ✅ | ⭐⭐⭐ | Textarea, validação client-side, loading states |
 | SPEC-031 | Subspec: Frontend — Tela de Resultados | ✅ | ⭐⭐⭐ | 3 colunas (desktop), accordion (mobile), PDF |
 
-#### Fase 2 — Refina a Experiência (6 specs — ⚪ Todas pendentes)
+#### Fase 2 — Refina a Experiência (7 specs em 2 famílias — ⚪ Todas pendentes)
 
 **Pré-requisito:** MVP (Fase 1) concluído e validado.
 
@@ -71,6 +71,13 @@ O projeto está organizado em **25 especificações** agrupadas em **5 famílias
 | SPEC-043 | Subspec: Métricas e Analytics | ⚪ | ⬜⬜⬜⬜⬜ | MVP |
 | SPEC-044 | Subspec: Ajuste de Prompts por Feedback | ⚪ | ⬜⬜⬜⬜⬜ | SPEC-041 |
 | SPEC-045 | Subspec: Rate Limiting Robusto | ⚪ | ⬜⬜⬜⬜⬜ | MVP |
+
+
+**Família 060 — Seleção de Alimentos**
+
+| Spec | Nome | Status | Qualidade | Depende de |
+|:----:|------|:------:|:---------:|------------|
+| SPEC-060 | **Principal:** Seleção de Alimentos + Geração Determinística | ⚪ | ⬜⬜⬜⬜⬜ | SPEC-020, SPEC-030 |
 
 #### Fase 3 — Escala e Personalização (6 specs — ⚪ Todas pendentes)
 
@@ -143,6 +150,22 @@ Ele já tentou aplicativos de contagem de calorias, mas desistiu porque exigem *
 
 **Perfil 5 — Vegano:**
 > "Mulher, 22 anos, 1,58m, 55kg. Vegana há 2 anos. Faço yoga 2x por semana. Quero manter o peso mas ganhar definição muscular. Como tofu, grão de bico, lentilha, quinoa, castanhas, frutas, vegetais. Não como nada de origem animal."
+
+---
+
+
+### Por que selecionar alimentos manualmente?
+
+Diferente de descrever preferências em texto livre, a seleção manual de alimentos resolve 3 problemas críticos identificados no MVP:
+
+1. **Realidade do usuário:** A IA frequentemente sugere alimentos que o usuário não conhece, não encontra no mercado ou não cabem no orçamento. Com a seleção manual, 100% dos alimentos do plano são familiares ao usuário.
+
+2. **Zero alimentos inventados:** Elimina completamente o problema de a IA gerar alimentos fora do catálogo (LL-002). O usuário só vê o que ele mesmo selecionou.
+
+3. **Controle de orçamento:** O usuário seleciona alimentos que cabem no bolso. Na v2, o campo  e preços permitirão meta de orçamento diário.
+
+O fluxo de texto livre continua disponível como modo "Rápido", mas o modo "Completo" com seleção de alimentos é o recomendado para planos de longo prazo.
+
 
 ---
 

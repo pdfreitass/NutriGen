@@ -12,16 +12,16 @@
 
 | Métrica | Valor |
 |---------|:----:|
-| Total de SPECs | **25** |
+| Total de SPECs | **26** |
 | Concluídas | **13** |
 | Parciais | **0** |
 | Em andamento | **0** |
-| Pendentes | **12** |
-| Progresso Geral | **52%** |
+| Pendentes | **13** |
+| Progresso Geral | **50%** |
 | Qualidade Média (concluídas) | **⭐⭐⭐⭐** (3.8/5) |
 
 ```
-Progresso:  [██████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░] 52%
+Progresso:  [█████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 50%
 Qualidade:  [████████████████████████████████████████████████████] 3.8/5
 ```
 
@@ -88,6 +88,14 @@ Qualidade:  [██████████████████████�
 |   ↳ [SPEC-043](SPEC-043-metricas-analytics.md) | Subspec: Métricas e Analytics Básicos | ⚪ Pendente | ⬜⬜⬜⬜⬜ |
 |   ↳ [SPEC-044](SPEC-044-ajuste-prompts.md) | Subspec: Ajuste de Prompts com Base em Feedback | ⚪ Pendente | ⬜⬜⬜⬜⬜ |
 |   ↳ [SPEC-045](SPEC-045-rate-limiting.md) | Subspec: Rate Limiting Robusto e Proteção contra Abuso | ⚪ Pendente | ⬜⬜⬜⬜⬜ |
+
+---
+
+### Família 060 — Seleção de Alimentos
+
+| ID | SPEC | Status | Qualidade |
+|----|------|--------|:---------:|
+| [SPEC-060](SPEC-060-selecao-alimentos.md) | **Principal:** Seleção de Alimentos + Geração Determinística | ⚪ Pendente | ⬜⬜⬜⬜⬜ |
 
 ---
 
