@@ -244,7 +244,7 @@ class MetasNutricionais(BaseModel):
 class ItemGerado(BaseModel):
     """Alimento individual dentro de uma refeição gerada pela IA."""
     nome: str = Field(..., description="Nome do alimento (deve existir no catálogo)")
-    quantidade_g: float = Field(..., ge=10, le=1000, description="Quantidade em gramas")
+    quantidade_g: float = Field(..., ge=30, le=500, description="Quantidade em gramas")
     proteina_g: float = Field(..., ge=0, description="Proteína calculada para esta porção")
     carboidrato_g: float = Field(..., ge=0, description="Carboidrato calculado para esta porção")
     gordura_g: float = Field(..., ge=0, description="Gordura calculada para esta porção")
@@ -320,10 +320,10 @@ class DietGenerateResponseV2(BaseModel):
     tmb: float = Field(..., description="Taxa Metabólica Basal em kcal")
     get_calorico: float = Field(..., description="Gasto Energético Total em kcal")
     objetivo: str = Field(..., description="Objetivo inferido da dieta")
-    planos: list = Field(..., description="3 planos alimentares gerados")
+    planos: List[PlanoGerado] = Field(..., description="3 planos alimentares gerados")
     pdf_url: Optional[str] = Field(None, description="URL para download do PDF")
     request_id: str = Field(..., description="UUID da requisição para suporte")
-    avisos: list[str] = Field(
+    avisos: List[str] = Field(
         default_factory=list,
         description="Avisos de segurança e recomendações (RN-070, RN-021, etc.)",
     )

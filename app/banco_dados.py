@@ -18,7 +18,7 @@ load_dotenv()
 _ODBC_STR = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
     "SERVER=localhost\\SQLEXPRESS;"
-    "DATABASE=nutrigen;"
+    "DATABASE=diet_plan_generator;"
     "Trusted_Connection=yes"
 )
 

@@ -33,7 +33,7 @@ class _RateLimitStore:
         self._store: dict[str, list[float]] = {}
         self._lock = threading.Lock()
 
-    def is_rate_limited(self, key: str, limit: int) -> bool:
+    def is_rate_limited(self, key: str, limit: int) -> tuple[bool, int]:
         """Verifica se a chave excedeu o limite na janela atual.
 
         Args:

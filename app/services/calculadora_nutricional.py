@@ -24,7 +24,7 @@ from app.excecoes import GETForaDoIntervaloSeguroError
 
 logger = logging.getLogger(__name__)
 
-# Intervalo seguro de GET (RN-042)
+# Intervalo seguro de GET (RN-060)
 _GET_MINIMO = 1200.0
 _GET_MAXIMO = 4000.0
 

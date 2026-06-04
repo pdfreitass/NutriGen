@@ -40,7 +40,7 @@ _CALORIA_TOLERANCIA_MIN = 0.95  # 95% do GET
 _CALORIA_TOLERANCIA_MAX = 1.05  # 105% do GET
 _SOBREPOSICAO_MAXIMA = 0.60     # máximo 60% de alimentos iguais entre planos
 _MIN_REFEICOES = 4
-_MAX_REFEICOES = 7
+_MAX_REFEICOES = 6
 
 
 # ─── ValidationResult interno (mutável durante validação) ─
@@ -340,9 +340,13 @@ class PlanValidator:
                 refeicao["alimentos"] = alimentos_validados
 
     def _buscar_similar(self, nome: str, catalogo: FoodCatalog):
-        """Busca alimento similar usando matching parcial por tokens."""
+        """Busca alimento similar usando matching por tokens e substring."""
         nome_lower = nome.lower().strip()
         tokens = set(nome_lower.split())
+
+        # Remover stop words comuns para melhorar matching
+        stop_words = {"de", "da", "do", "em", "com", "sem", "ao", "a", "o", "e"}
+        tokens = tokens - stop_words
 
         if not tokens:
             return None
@@ -353,6 +357,11 @@ class PlanValidator:
         for alimento in todos:
             nome_alimento_lower = alimento.nome.lower()
             score = sum(1 for t in tokens if t in nome_alimento_lower)
+            # Bonus: se o nome do alimento contém o nome buscado como substring
+            if nome_lower in nome_alimento_lower:
+                score += 10
+            if nome_alimento_lower in nome_lower:
+                score += 5
             if score > 0:
                 candidatos.append((score, alimento))
 
