@@ -31,31 +31,31 @@ O projeto está organizado em **25 especificações** agrupadas em **5 famílias
 
 **Família 010 — Infraestrutura & Configuração**
 
-| Spec | Nome | Status | Componente principal |
-|:----:|------|:------:|----------------------|
-| SPEC-010 | **Principal:** Configuração do Cliente DeepSeek | ✅ | `DeepSeekClient` — HTTP, retry, timeout |
-| SPEC-011 | Subspec: Configuração de Ambiente e Segurança | ✅ | `.env`, CORS, headers, rate limit config |
-| SPEC-012 | Subspec: Catálogo de Alimentos (FoodCatalog) | ✅ | 68 alimentos, 8 categorias, busca por nome |
-| SPEC-013 | Subspec: Logs e Observabilidade Básica | ✅ | JSON logs, `request_id`, 8 pontos de log |
+| Spec | Nome | Status | Qualidade | Componente principal |
+|:----:|------|:------:|:---------:|----------------------|
+| SPEC-010 | **Principal:** Configuração do Cliente DeepSeek | ✅ | ⭐⭐⭐⭐ | `DeepSeekClient` — HTTP, retry, timeout |
+| SPEC-011 | Subspec: Configuração de Ambiente e Segurança | ✅ | ⭐⭐⭐⭐ | `.env`, CORS, headers, rate limit config |
+| SPEC-012 | Subspec: Catálogo de Alimentos (FoodCatalog) | ✅ | ⭐⭐⭐⭐⭐ | 68 alimentos, 8 categorias, busca por nome |
+| SPEC-013 | Subspec: Logs e Observabilidade Básica | ✅ | ⭐⭐⭐ | JSON logs, `request_id`, 8 pontos de log |
 
 **Família 020 — Pipeline de Processamento**
 
-| Spec | Nome | Status | Componente principal |
-|:----:|------|:------:|----------------------|
-| SPEC-020 | **Principal:** Extração NL→JSON | ✅ | `ExtractorService` — texto livre → JSON |
-| SPEC-021 | Subspec: Expansão de Restrições | ✅ | `RestrictionExpander` — genérico → lista concreta |
-| SPEC-022 | Subspec: Geração de Planos via IA | ✅ | `PlanGeneratorService` — 3 planos em 1 chamada |
-| SPEC-023 | Subspec: Pipeline de Validação | ✅ | `PlanValidator` — 6 fases determinísticas |
-| SPEC-024 | Subspec: Orquestrador (UseCase) | ✅ | `GerarPlanosUseCase` — fluxo completo |
-| SPEC-025 | Subspec: Endpoint de Geração | ✅ | `POST /generate` + rate limiting |
-| SPEC-026 | Subspec: Tratamento de Erros | ✅ | Mensagens PT-BR, timeout, retry, fallback |
+| Spec | Nome | Status | Qualidade | Componente principal |
+|:----:|------|:------:|:---------:|----------------------|
+| SPEC-020 | **Principal:** Extração NL→JSON | ✅ | ⭐⭐⭐⭐ | `ExtractorService` — texto livre → JSON |
+| SPEC-021 | Subspec: Expansão de Restrições | ✅ | ⭐⭐⭐⭐ | `RestrictionExpander` — genérico → lista concreta |
+| SPEC-022 | Subspec: Geração de Planos via IA | ✅ | ⭐⭐⭐⭐ | `PlanGeneratorService` — 3 planos em 1 chamada |
+| SPEC-023 | Subspec: Pipeline de Validação | ✅ | ⭐⭐⭐⭐⭐ | `PlanValidator` — 6 fases determinísticas |
+| SPEC-024 | Subspec: Orquestrador (UseCase) | ✅ | ⭐⭐⭐⭐ | `GerarPlanosUseCase` — fluxo completo |
+| SPEC-025 | Subspec: Endpoint de Geração | ✅ | ⭐⭐⭐⭐ | `POST /generate` + rate limiting |
+| SPEC-026 | Subspec: Tratamento de Erros | ✅ | ⭐⭐⭐ | Mensagens PT-BR, timeout, retry, fallback |
 
 **Família 030 — Frontend**
 
-| Spec | Nome | Status | Componente principal |
-|:----:|------|:------:|----------------------|
-| SPEC-030 | **Principal:** Frontend — Página de Input | ✅ | Textarea, validação client-side, loading states |
-| SPEC-031 | Subspec: Frontend — Tela de Resultados | ✅ | 3 colunas (desktop), accordion (mobile), PDF |
+| Spec | Nome | Status | Qualidade | Componente principal |
+|:----:|------|:------:|:---------:|----------------------|
+| SPEC-030 | **Principal:** Frontend — Página de Input | ✅ | ⭐⭐⭐ | Textarea, validação client-side, loading states |
+| SPEC-031 | Subspec: Frontend — Tela de Resultados | ✅ | ⭐⭐⭐ | 3 colunas (desktop), accordion (mobile), PDF |
 
 #### Fase 2 — Refina a Experiência (6 specs — ⚪ Todas pendentes)
 
@@ -63,14 +63,14 @@ O projeto está organizado em **25 especificações** agrupadas em **5 famílias
 
 **Família 040 — Experiência do Usuário**
 
-| Spec | Nome | Status | Depende de |
-|:----:|------|:------:|------------|
-| SPEC-040 | **Principal:** Histórico de Gerações (autenticados) | ⚪ | MVP |
-| SPEC-041 | Subspec: Sistema de Feedback (👍/👎) | ⚪ | MVP |
-| SPEC-042 | Subspec: Regeneração Inteligente | ⚪ | MVP |
-| SPEC-043 | Subspec: Métricas e Analytics | ⚪ | MVP |
-| SPEC-044 | Subspec: Ajuste de Prompts por Feedback | ⚪ | SPEC-041 |
-| SPEC-045 | Subspec: Rate Limiting Robusto | ⚪ | MVP |
+| Spec | Nome | Status | Qualidade | Depende de |
+|:----:|------|:------:|:---------:|------------|
+| SPEC-040 | **Principal:** Histórico de Gerações (autenticados) | ⚪ | ⬜⬜⬜⬜⬜ | MVP |
+| SPEC-041 | Subspec: Sistema de Feedback (👍/👎) | ⚪ | ⬜⬜⬜⬜⬜ | MVP |
+| SPEC-042 | Subspec: Regeneração Inteligente | ⚪ | ⬜⬜⬜⬜⬜ | MVP |
+| SPEC-043 | Subspec: Métricas e Analytics | ⚪ | ⬜⬜⬜⬜⬜ | MVP |
+| SPEC-044 | Subspec: Ajuste de Prompts por Feedback | ⚪ | ⬜⬜⬜⬜⬜ | SPEC-041 |
+| SPEC-045 | Subspec: Rate Limiting Robusto | ⚪ | ⬜⬜⬜⬜⬜ | MVP |
 
 #### Fase 3 — Escala e Personalização (6 specs — ⚪ Todas pendentes)
 
@@ -78,14 +78,14 @@ O projeto está organizado em **25 especificações** agrupadas em **5 famílias
 
 **Família 050 — Escala & Monetização**
 
-| Spec | Nome | Status | Depende de |
-|:----:|------|:------:|------------|
-| SPEC-050 | **Principal:** Dashboard Administrativo | ⚪ | Fase 2 |
-| SPEC-051 | Subspec: Múltiplos Provedores de IA | ⚪ | Fase 2 |
-| SPEC-052 | Subspec: Chat Multi-Turno | ⚪ | Fase 2 |
-| SPEC-053 | Subspec: Exportação Avançada (PDF + CSV) | ⚪ | Fase 2 |
-| SPEC-054 | Subspec: Perfis de Usuário Salvos | ⚪ | Fase 2 |
-| SPEC-055 | Subspec: Assinatura e Monetização (Freemium) | ⚪ | Fase 2 |
+| Spec | Nome | Status | Qualidade | Depende de |
+|:----:|------|:------:|:---------:|------------|
+| SPEC-050 | **Principal:** Dashboard Administrativo | ⚪ | ⬜⬜⬜⬜⬜ | Fase 2 |
+| SPEC-051 | Subspec: Múltiplos Provedores de IA | ⚪ | ⬜⬜⬜⬜⬜ | Fase 2 |
+| SPEC-052 | Subspec: Chat Multi-Turno | ⚪ | ⬜⬜⬜⬜⬜ | Fase 2 |
+| SPEC-053 | Subspec: Exportação Avançada (PDF + CSV) | ⚪ | ⬜⬜⬜⬜⬜ | Fase 2 |
+| SPEC-054 | Subspec: Perfis de Usuário Salvos | ⚪ | ⬜⬜⬜⬜⬜ | Fase 2 |
+| SPEC-055 | Subspec: Assinatura e Monetização (Freemium) | ⚪ | ⬜⬜⬜⬜⬜ | Fase 2 |
 
 > **Nota:** As SPECs usam numeração de 10 em 10 com famílias. Cada dezena (`010`, `020`...) é uma feature principal; números `01`-`09` são subspecs que estendem a principal. Novas SPECs seguem o próximo múltiplo de 10 disponível.
 
