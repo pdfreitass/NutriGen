@@ -1,37 +1,69 @@
 # SPEC-042: Regeneração Inteligente de Planos
 
 **Status:** ⚪ Pendente
-**Fase:** 2 — Refina a Experiência
-**Pré-requisito:** MVP (Fase 1) concluído
+**Fase:** 2
+**Tipo:** Subspec
+**Subspec de:** SPEC-040
+**Depende de:** SPEC-040 (Histórico)
+**Data de criação:** 2026-05-30
 
 ---
 
-## User Story
+## 1. User Story
 
-Como usuário, quero gerar novos planos quando não gostar dos atuais, com garantia de que serão diferentes da geração anterior.
-
----
-
-## Critérios de Aceite
-
-- [ ] Botão "🔄 Gerar Novamente" envia o MESMO texto original
-- [ ] Backend recebe parâmetro opcional `{ "texto": "...", "evitar_ids": ["uuid1", "uuid2"] }` com alimentos a evitar
-- [ ] System prompt da regeneração inclui: "EVITE estes alimentos que já apareceram em gerações anteriores: [lista]"
-- [ ] Se `evitar_ids` for enviado, temperatura sobe para 0.85 (mais variação)
-- [ ] Frontend detecta se usuário gerou 3x em < 2 minutos e exibe sugestão: _"Que tal ajustar sua descrição para obter resultados mais diferentes?"_
-- [ ] Planos anteriores permanecem acessíveis (não sobrescrever)
+Como usuário, quero gerar novos planos quando não gostar dos atuais, com garantia de que serão diferentes da geração anterior — sem repetir os mesmos alimentos.
 
 ---
 
-## Arquivos Previstos
+## 2. Critérios de Aceite
 
-- `app/routers/diet.py` (atualizar endpoint)
-- `app/services/plan_generator_service.py` (atualizar prompt)
-- `frontend/js/app.js` (contador de regenerações)
+### 2.1 Backend
+
+- [ ] **REGEN-01:** `POST /api/diet/generate` aceita campo opcional `evitar_alimentos: list[str]` com nomes de alimentos a excluir.
+  - **Input:** Mesmo schema atual + `evitar_alimentos` (opcional).
+  - **Output:** Idêntico ao atual.
+
+- [ ] **REGEN-02:** Se `evitar_alimentos` for enviado, temperatura do DeepSeek sobe para 0.85.
+
+- [ ] **REGEN-03:** Prompt de geração inclui: "EVITE estes alimentos que já apareceram em planos anteriores: [lista]".
+
+### 2.2 Frontend
+
+- [ ] **REGEN-04:** Botão "🔄 Gerar Novamente" coleta nomes de alimentos dos 3 planos atuais e envia em `evitar_alimentos`.
+- [ ] **REGEN-05:** Contador de regenerações: se ≥ 3 em < 2 minutos, exibe sugestão: "Que tal ajustar sua rotina para mais variação?".
+- [ ] **REGEN-06:** Toast informando: "Gerando novos planos com alimentos diferentes dos anteriores..."
 
 ---
 
-## Notas Técnicas
+## 3. Contratos de Dados
 
-- Na v1 (MVP), a regeneração é idêntica a uma nova chamada (sem `evitar_ids`). A SPEC-042 implementa a versão inteligente
-- A lista de alimentos a evitar é montada pelo frontend a partir dos planos atuais e enviada como parâmetro opcional
+```json
+// Request (campo novo)
+{
+  "sexo": "masculino", "idade": 21, "peso_kg": 88, "altura_cm": 184,
+  "nivel_atividade": "ativo", "texto": "...",
+  "evitar_alimentos": ["Arroz Branco Cozido", "Peito de Frango Grelhado", "Banana"]
+}
+```
+
+---
+
+## 4. Fluxo de Implementação
+
+```
+Passo 1 — Atualizar DietGenerateRequestV2: adicionar campo evitar_alimentos: list[str] = []
+Passo 2 — GerarPlanosUseCase: se evitar_alimentos, adicionar à lista de restrições expandidas
+Passo 3 — PlanGeneratorService: se evitar_alimentos, temp=0.85 e reforçar no prompt
+Passo 4 — Frontend: botão "Gerar Novamente" coleta alimentos e reenvia
+```
+
+---
+
+## 5. Arquivos Previstos
+
+| Arquivo | Camada | Tipo |
+|---------|:------:|:----:|
+| `app/models/esquemas.py` | Domain | Modificado (+evitar_alimentos) |
+| `app/use_cases/gerar_planos.py` | Application | Modificado |
+| `app/services/servico_geracao_planos.py` | Application | Modificado |
+| `frontend/js/app.js` | Frontend | Modificado |

@@ -1,40 +1,47 @@
 # SPEC-044: Ajuste de Prompts com Base em Feedback
 
 **Status:** ⚪ Pendente
-**Fase:** 2 — Refina a Experiência
-**Pré-requisito:** SPEC-041 (Sistema de Feedback) concluído
+**Fase:** 2
+**Tipo:** Subspec
+**Subspec de:** SPEC-040
+**Depende de:** SPEC-041 (Feedback)
+**Data de criação:** 2026-05-30
 
 ---
 
-## User Story
+## 1. User Story
 
-Como product owner, quero usar o feedback dos usuários para melhorar os prompts do sistema e reduzir a taxa de feedback negativo.
-
----
-
-## Critérios de Aceite
-
-- [ ] Script `scripts/analisar_feedback.py` que:
-  - Lê feedbacks da tabela `feedback_planos`
-  - Agrupa por motivo
-  - Extrai exemplos de planos que receberam feedback negativo
-  - Gera relatório em Markdown com top 5 problemas e exemplos
-- [ ] Processo documentado: a cada 50 feedbacks, rodar script e revisar prompts
-- [ ] Versionamento de prompts: cada system prompt salvo em `prompts/extraction_v1.txt`, `prompts/generation_v1.txt`
-- [ ] Novo prompt versionado como `v2` quando ajustado
+Como product owner, quero usar o feedback dos usuários para melhorar iterativamente os prompts do sistema, reduzindo a taxa de insatisfação.
 
 ---
 
-## Arquivos Previstos
+## 2. Critérios de Aceite
 
-- `scripts/analisar_feedback.py`
-- `prompts/extraction_v1.txt`
-- `prompts/generation_v1.txt`
+- [ ] Script `scripts/analisar_feedback.py` lê feedbacks, agrupa por motivo, extrai exemplos de planos negativos, gera relatório Markdown
+- [ ] Extrair prompts atuais para arquivos versionados: `prompts/extraction_v1.txt`, `prompts/generation_v1.txt`
+- [ ] Novo prompt versionado como `v2`, `v3` etc quando ajustado
+- [ ] A cada 50 feedbacks, rodar script e revisar prompts manualmente
+- [ ] Prompts antigos mantidos para rollback (carregar por versão via env `PROMPT_VERSION=v1`)
 
 ---
 
-## Notas Técnicas
+## 3. Fluxo
 
-- Ajustes de prompt são feitos manualmente (não automatizados) com base no relatório
-- Cada versão de prompt é testada com um conjunto fixo de 10 inputs de exemplo antes de ir para produção
-- Prompts antigos são mantidos para rollback rápido se a nova versão performar pior
+```
+Passo 1 — Extrair system prompts do código para prompts/*.txt
+Passo 2 — Carregar prompts de arquivos (não hardcoded) usando PROMPT_VERSION do .env
+Passo 3 — Script scripts/analisar_feedback.py: query SQL → agrupar → gerar relatório
+Passo 4 — Processo manual: revisar relatório → ajustar prompt → criar vN+1 → testar → deploy
+```
+
+---
+
+## 4. Arquivos Previstos
+
+| Arquivo | Tipo |
+|---------|:----:|
+| `scripts/analisar_feedback.py` | Novo |
+| `prompts/extraction_v1.txt` | Novo |
+| `prompts/generation_v1.txt` | Novo |
+| `app/services/servico_extracao.py` | Modificado (carregar de arquivo) |
+| `app/services/servico_geracao_planos.py` | Modificado (carregar de arquivo) |
