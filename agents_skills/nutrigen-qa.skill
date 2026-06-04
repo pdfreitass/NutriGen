@@ -1,0 +1,192 @@
+# NutriGen — QA Skill
+
+## Objetivo
+
+Validar que o NutriGen gera planos alimentares corretos, seguros e que atendem às expectativas do usuário. Toda validação é baseada nas 59 regras de negócio (`docs/regras.md`) e nos 5 fluxos do sistema (`docs/fluxos.md`).
+
+---
+
+## Fluxos a Testar (fonte: `docs/fluxos.md`)
+
+### Fluxo 1 — Happy Path (Geração de Planos)
+1. Usuário acessa o sistema → vê caixa de texto
+2. Digita input válido (≥ 20 caracteres, com sexo, idade, peso, altura)
+3. Clica "Gerar Planos" → spinner contextual aparece
+4. Recebe 3 planos lado a lado (desktop) / accordion (mobile)
+5. Consegue baixar PDF, copiar plano, gerar novamente
+
+**Pré-condição:** API DeepSeek acessível, SQL Server online
+
+### Fluxo 2 — Input Incompleto
+1. Usuário envia input sem peso e altura
+2. Sistema retorna HTTP 400 com campos faltantes listados
+3. Mensagem em português claro, sem jargão técnico
+4. Texto original preservado na caixa para edição
+
+### Fluxo 3 — Restrições Alimentares
+1. Usuário menciona "não como peixe", "sou vegano", "tenho intolerância à lactose"
+2. NENHUM plano contém alimentos restritos (tolerância 0%)
+3. Avisos apropriados aparecem (alergia, condição médica, veganismo)
+4. Menção a transtorno alimentar → BLOQUEIO total (RN-073)
+
+### Fluxo 4 — Visualização e Exportação
+1. Sumário do paciente visível (TMB, GET, objetivo)
+2. 3 planos renderizados com nome, descrição, macros, refeições
+3. Desktop: 3 colunas lado a lado
+4. Mobile: accordion vertical com abas
+5. PDF download funciona (UUID válido, expira em 7 dias)
+6. Disclaimer visível no rodapé
+
+### Fluxo 5 — Regeneração
+1. Botão "Gerar Novamente" envia o mesmo texto
+2. Novos planos são gerados (temperatura 0.7 garante variação)
+3. Planos anteriores preservados (novos UUIDs)
+4. Após 3x em < 2min → sugestão proativa de editar input
+
+---
+
+## Regras de Negócio que DEVEM ser Validadas (tolerância zero)
+
+### Geração dos Planos (RN-001 a RN-006)
+
+| Regra | O que validar | Como testar |
+|-------|---------------|-------------|
+| **RN-001** | Exatamente 3 planos | Contar `len(response.planos) == 3` |
+| **RN-002** | Planos estruturalmente distintos | Verificar nomes, eixos, alimentos diferentes |
+| **RN-003** | Nomes descritivos (não "Plano A/B/C") | Regex: não pode ser "Plano \\w" |
+| **RN-004** | ≥ 40% alimentos diferentes entre planos | `len(intersecção) / len(união) ≤ 0.60` |
+| **RN-005** | 4-6 refeições por plano | `4 ≤ len(refeicoes) ≤ 6` |
+| **RN-006** | Distribuição calórica assimétrica | Nenhum plano com mesma distribuição que outro |
+
+### Nutricional (RN-010 a RN-015)
+
+| Regra | O que validar | Margem |
+|-------|---------------|:------:|
+| **RN-010** | Macros dentro da meta | ±10% por macro individual |
+| **RN-011** | Proteína no almoço e jantar | ≥ 1 fonte proteica por refeição principal |
+| **RN-012** | ≥ 1 porção vegetais/frutas por dia | Ideal 2-3 porções |
+| **RN-013** | Nenhum alimento > 50% das calorias da refeição | — |
+| **RN-014** | Quantidades entre 30g e 500g | Fora → clamp |
+| **RN-015** | Soma calórica do plano | 95%-105% do GET |
+
+### Restrições — TOLERÂNCIA ZERO (RN-020 a RN-023)
+
+| Regra | Gatilho | Validação |
+|-------|---------|-----------|
+| **RN-020** | "não como X" | X ausente em TODOS os planos |
+| **RN-021** | Alergia/intolerância | Alérgeno ausente + aviso explícito |
+| **RN-022** | Vegano/vegetariano | Sem proteína animal + fontes vegetais suficientes |
+| **RN-023** | Restrição incompatível com meta | Aviso de suplementação |
+
+### Saúde e Segurança (RN-060 a RN-082)
+
+| Regra | Gatilho | Validação |
+|-------|---------|-----------|
+| **RN-060** | GET fora de 1200-4000 kcal | Bloqueio + mensagem |
+| **RN-061** | Gestante | GET ≥ 1800 kcal |
+| **RN-062** | Adolescente (< 18) | GET ≥ 1500 kcal + aviso |
+| **RN-070** | TODA resposta | Disclaimer visível |
+| **RN-071** | Gravidez mencionada | Alerta trimestre + obstetra |
+| **RN-072** | Condição médica | Alerta médico |
+| **RN-073** | Transtorno alimentar | BLOQUEIO TOTAL |
+| **RN-081** | Suplementos mencionados | Incluir sem dosagem + aviso |
+| **RN-082** | Restrição calórica severa | NUNCA < 1200 kcal |
+
+### Input e Validação (RN-030 a RN-052)
+
+| Regra | Cenário | Comportamento esperado |
+|-------|---------|----------------------|
+| **RN-030** | Faltam sexo, idade, peso ou altura | 400 + lista de campos faltantes |
+| **RN-031** | Nível de atividade ambíguo | Assume "sedentário" + avisa |
+| **RN-032** | Objetivo ambíguo | Infere por IMC + informa |
+| **RN-033** | Sem preferências | Gera com catálogo padrão brasileiro |
+| **RN-034** | Input < 20 ou > 2000 chars | Rejeitar / truncar com aviso |
+| **RN-040** | Campos obrigatórios ausentes | Bloquear geração |
+| **RN-041** | Valores fora de intervalos fisiológicos | Rejeitar com mensagem específica |
+| **RN-050** | Input contraditório | Processar pelo objetivo declarado |
+| **RN-051** | Restrição conflita com preferência | Priorizar restrição |
+
+---
+
+## Pipeline de Validação Pós-Geração (fonte: `SPEC-023`)
+
+O `PlanValidator` executa 6 fases em ordem fixa. Testar cada fase isoladamente:
+
+| Fase | O que valida | Exemplo de falha | Correção esperada |
+|:----:|-------------|------------------|-------------------|
+| 1 | Estrutural (RN-001, RN-005) | 2 ou 4 planos; < 4 ou > 6 refeições | Rejeitar / ajustar |
+| 2 | Restrições (RN-020, RN-021) | Alimento proibido aparece | Remover e substituir |
+| 3 | Catálogo (LL-002) | Alimento inventado | Match no FoodCatalog |
+| 4 | Quantidades (RN-014) | 600g de arroz | Clamp para 500g |
+| 5 | Nutricional (RN-010, RN-015) | Macros fora de ±10% | Ajustar proporcionalmente |
+| 6 | Diversidade (RN-004) | 80% de sobreposição | Rejeitar e re-solicitar |
+
+---
+
+## Métricas de Sucesso do Produto (fonte: `docs/visao.md` §3)
+
+| Métrica | Alvo | Como QA verifica |
+|---------|:----:|------------------|
+| Conversão (visitante → plano gerado) | > 40% | Eventos analytics |
+| Tempo total de geração | < 30s (média) | Log de latência |
+| Erro na extração NL→JSON | < 5% | Logs de falha |
+| Planos sem alimentos proibidos | 100% | Validação SPEC-023 |
+| Download de PDF | > 60% dos usuários | Contagem de downloads |
+| Retenção em 7 dias | > 25% | Analytics de retorno |
+
+---
+
+## Tratamento de Erros (fonte: `SPEC-026`)
+
+| HTTP | Gatilho | Mensagem esperada (PT-BR) |
+|:----:|---------|--------------------------|
+| 400 | Campos faltantes / GET inseguro | Explicação clara do que falta |
+| 422 | Validação Pydantic | Detalhes do campo inválido |
+| 429 | Rate limit excedido | "Aguarde X segundos" |
+| 500 | Erro interno | "Erro interno. Nossa equipe foi notificada." |
+| 502 | IA falhou após retries | "Não foi possível gerar planos válidos." |
+| 503 | DeepSeek offline | "IA temporariamente indisponível." |
+| 504 | Timeout (90s+) | "Tempo limite excedido." |
+| Rede | Cliente offline | "Sem conexão com a internet." |
+
+**Regra:** NUNCA exibir stack trace, KeyError, ou jargão técnico ao usuário (RNF-034).
+
+---
+
+## Perfis de Teste (fonte: `docs/visao.md` §1)
+
+| Perfil | Input de teste | O que validar |
+|--------|----------------|---------------|
+| Sedentário (emagrecer) | "Mulher, 34a, 1,62m, 78kg. Home office, sem exercício. Quero emagrecer." | GET para perda de peso, macros 35/35/30 |
+| Atleta (performance) | "Homem, 25a, 1,80m, 85kg. Crossfit 5x/semana. Melhorar performance." | GET alto, proteína elevada |
+| Gestante | "Grávida 6 meses, 30a, 1,65m, 72kg. Caminho 30min/dia." | GET ≥ 1800, aviso de gestação |
+| Idoso (diabético) | "Homem, 68a, 1,70m, 80kg. Diabético tipo 2. Hidroginástica 3x/semana." | Aviso médico, controle de carbo |
+| Vegano | "Mulher, 22a, 1,58m, 55kg. Vegana. Yoga 2x/semana. Manter peso." | Zero origem animal, fontes vegetais |
+| Restrição (alergia) | Incluir "sou alérgico a amendoim" | Zero amendoim + aviso (RN-021) |
+| Restrição (peixe) | Incluir "não como peixe" | Zero peixe/atum/salmão/camarão |
+
+---
+
+## Checklists de QA por Fase
+
+### MVP (Fase 1 — 13 specs concluídas)
+- [ ] SPEC-010: DeepSeekClient — timeout, retry, JSON mode
+- [ ] SPEC-012: FoodCatalog — 68 alimentos, busca por nome, expansão de restrições
+- [ ] SPEC-020: ExtractorService — 5 perfis de teste extraídos corretamente
+- [ ] SPEC-022: PlanGeneratorService — 3 planos com eixos distintos
+- [ ] SPEC-023: PlanValidator — 6 fases de validação passam em todos os perfis
+- [ ] SPEC-024: Orquestrador — fluxo completo sem quebrar em nenhuma etapa
+- [ ] SPEC-025: Endpoint — rate limiting, sanitização, erros mapeados
+- [ ] SPEC-021: RestrictionExpander — "peixe" expande para 4 itens, "vegano" para 22
+- [ ] SPEC-030: Frontend Input — textarea, contador, loading states
+- [ ] SPEC-031: Frontend Resultados — 3 colunas desktop, accordion mobile
+- [ ] SPEC-026: Tratamento de Erros — todos HTTP errors com mensagem PT-BR
+- [ ] SPEC-011: Configuração — .env carregado, CORS restrito
+- [ ] SPEC-013: Logs — request_id propagado, 8 pontos de log
+
+### Regressão (toda alteração)
+- [ ] 5 perfis de teste geram planos sem erro
+- [ ] Restrições são respeitadas (0 violações)
+- [ ] PDF é gerado e acessível
+- [ ] Erros retornam mensagens em PT-BR
+- [ ] Disclaimer presente em toda resposta
