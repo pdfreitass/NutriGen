@@ -1,6 +1,93 @@
-# 🔭 Visão do Produto — Diet Plan Generator (v2 com IA)
+# 🔭 Visão do Produto — NutriGen (Diet Plan Generator com IA)
 
-> **Propósito:** Documento de visão em 5 perspectivas. Deve ser usado como contexto por uma IA para gerar código. Seja preciso e sem ambiguidades.
+> **Propósito:** Documento de visão canônica em 5 perspectivas + roadmap de especificações. Deve ser usado como contexto por uma IA para gerar código. Seja preciso e sem ambiguidades.
+>
+> **Última atualização:** 2026-06-04
+
+---
+
+## 0. Estrutura da Documentação e Roadmap
+
+Antes de mergulhar nas 5 perspectivas da visão, este é o mapa completo da documentação do projeto. Todo arquivo listado aqui existe na pasta `docs/` e deve ser lido pela IA antes de gerar código.
+
+### 0.1 Documentos de Referência
+
+| Documento | Conteúdo | Quando consultar |
+|-----------|----------|------------------|
+| `visao.md` (este) | Visão do produto em 5 perspectivas + resumo do roadmap | **Sempre — leia primeiro** |
+| `roadmap.md` | Fonte oficial de acompanhamento: 25 SPECs em 3 fases, progresso, backlog | Para saber o status atual do projeto |
+| `requisitos.md` | 46 RFs + 26 RNFs com priorização MoSCoW | Para entender escopo e prioridades |
+| `arquitetura.md` | Arquitetura em camadas, stack, modelo de dados, prompts | Para implementar qualquer código backend |
+| `fluxos.md` | 5 fluxos completos (happy path, erros, restrições, visualização, regeneração) | Para implementar endpoints e lógica de frontend |
+| `regras.md` | 59 regras de negócio (RN-001 a RN-142) | **Sempre — cada regra DEVE ser referenciada no código** |
+| `ADR.md` | 6 decisões de arquitetura registradas (ADR-001 a ADR-006) | Para entender escolhas fundamentais já feitas |
+| `licoes-aprendidas.md` | 7 lições aprendidas (LL-001 a LL-007) + regras rápidas | **Sempre — evite repetir erros conhecidos** |
+
+### 0.2 Roadmap de Especificações (SPECs)
+
+O projeto está organizado em **25 especificações** agrupadas em **5 famílias** (numeração de 10 em 10). Cada SPEC Principal (múltiplo de 10) define uma feature; subspecs (01-09) estendem a principal da família. Arquivos em `docs/specs/SPEC-0X0-nome.md`.
+
+#### Fase 1 — MVP (13 specs em 3 famílias — ✅ Todas concluídas)
+
+**Família 010 — Infraestrutura & Configuração**
+
+| Spec | Nome | Status | Componente principal |
+|:----:|------|:------:|----------------------|
+| SPEC-010 | **Principal:** Configuração do Cliente DeepSeek | ✅ | `DeepSeekClient` — HTTP, retry, timeout |
+| SPEC-011 | Subspec: Configuração de Ambiente e Segurança | ✅ | `.env`, CORS, headers, rate limit config |
+| SPEC-012 | Subspec: Catálogo de Alimentos (FoodCatalog) | ✅ | 68 alimentos, 8 categorias, busca por nome |
+| SPEC-013 | Subspec: Logs e Observabilidade Básica | ✅ | JSON logs, `request_id`, 8 pontos de log |
+
+**Família 020 — Pipeline de Processamento**
+
+| Spec | Nome | Status | Componente principal |
+|:----:|------|:------:|----------------------|
+| SPEC-020 | **Principal:** Extração NL→JSON | ✅ | `ExtractorService` — texto livre → JSON |
+| SPEC-021 | Subspec: Expansão de Restrições | ✅ | `RestrictionExpander` — genérico → lista concreta |
+| SPEC-022 | Subspec: Geração de Planos via IA | ✅ | `PlanGeneratorService` — 3 planos em 1 chamada |
+| SPEC-023 | Subspec: Pipeline de Validação | ✅ | `PlanValidator` — 6 fases determinísticas |
+| SPEC-024 | Subspec: Orquestrador (UseCase) | ✅ | `GerarPlanosUseCase` — fluxo completo |
+| SPEC-025 | Subspec: Endpoint de Geração | ✅ | `POST /generate` + rate limiting |
+| SPEC-026 | Subspec: Tratamento de Erros | ✅ | Mensagens PT-BR, timeout, retry, fallback |
+
+**Família 030 — Frontend**
+
+| Spec | Nome | Status | Componente principal |
+|:----:|------|:------:|----------------------|
+| SPEC-030 | **Principal:** Frontend — Página de Input | ✅ | Textarea, validação client-side, loading states |
+| SPEC-031 | Subspec: Frontend — Tela de Resultados | ✅ | 3 colunas (desktop), accordion (mobile), PDF |
+
+#### Fase 2 — Refina a Experiência (6 specs — ⚪ Todas pendentes)
+
+**Pré-requisito:** MVP (Fase 1) concluído e validado.
+
+**Família 040 — Experiência do Usuário**
+
+| Spec | Nome | Status | Depende de |
+|:----:|------|:------:|------------|
+| SPEC-040 | **Principal:** Histórico de Gerações (autenticados) | ⚪ | MVP |
+| SPEC-041 | Subspec: Sistema de Feedback (👍/👎) | ⚪ | MVP |
+| SPEC-042 | Subspec: Regeneração Inteligente | ⚪ | MVP |
+| SPEC-043 | Subspec: Métricas e Analytics | ⚪ | MVP |
+| SPEC-044 | Subspec: Ajuste de Prompts por Feedback | ⚪ | SPEC-041 |
+| SPEC-045 | Subspec: Rate Limiting Robusto | ⚪ | MVP |
+
+#### Fase 3 — Escala e Personalização (6 specs — ⚪ Todas pendentes)
+
+**Pré-requisito:** Fase 2 concluída com > 70% de feedback positivo.
+
+**Família 050 — Escala & Monetização**
+
+| Spec | Nome | Status | Depende de |
+|:----:|------|:------:|------------|
+| SPEC-050 | **Principal:** Dashboard Administrativo | ⚪ | Fase 2 |
+| SPEC-051 | Subspec: Múltiplos Provedores de IA | ⚪ | Fase 2 |
+| SPEC-052 | Subspec: Chat Multi-Turno | ⚪ | Fase 2 |
+| SPEC-053 | Subspec: Exportação Avançada (PDF + CSV) | ⚪ | Fase 2 |
+| SPEC-054 | Subspec: Perfis de Usuário Salvos | ⚪ | Fase 2 |
+| SPEC-055 | Subspec: Assinatura e Monetização (Freemium) | ⚪ | Fase 2 |
+
+> **Nota:** As SPECs usam numeração de 10 em 10 com famílias. Cada dezena (`010`, `020`...) é uma feature principal; números `01`-`09` são subspecs que estendem a principal. Novas SPECs seguem o próximo múltiplo de 10 disponível.
 
 ---
 
@@ -70,7 +157,7 @@ Ele já tentou aplicativos de contagem de calorias, mas desistiu porque exigem *
 └──────────────────────────┬───────────────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────────────┐
-│ 2. EXTRAÇÃO ESTRUTURADA (IA — LLM)                               │
+│ 2. EXTRAÇÃO ESTRUTURADA (IA — DeepSeek V4 Pro)                   │
 │    Converte linguagem natural → JSON estruturado:                │
 │    {                                                             │
 │      "perfil": { "sexo": "M", "idade": 28, "peso_kg": 72, ... },│
@@ -79,6 +166,7 @@ Ele já tentou aplicativos de contagem de calorias, mas desistiu porque exigem *
 │      "restricoes": ["peixe"],                                    │
 │      "extra": { "cafe_rapido": true }                            │
 │    }                                                             │
+│    → Implementado em SPEC-020 (ExtractorService)                 │
 └──────────────────────────┬───────────────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────────────┐
@@ -87,42 +175,48 @@ Ele já tentou aplicativos de contagem de calorias, mas desistiu porque exigem *
 │    • GET (fator de atividade)                                    │
 │    • Distribuição de macros por objetivo                         │
 │    • Metas por refeição (4 refeições/dia)                        │
+│    → Implementado no NutritionCalculator (sem IA)                │
 └──────────────────────────┬───────────────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────────────┐
-│ 4. GERAÇÃO DOS 3 PLANOS (IA — LLM)                               │
-│    Gera 3 variações com eixos de diferenciação (ver abaixo)      │
+│ 4. GERAÇÃO DOS 3 PLANOS (IA — DeepSeek V4 Pro)                   │
+│    Gera 3 variações com eixos de diferenciação fixos             │
+│    → Implementado em SPEC-022 (PlanGeneratorService)             │
 └──────────────────────────┬───────────────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────────────┐
 │ 5. VALIDAÇÃO E PÓS-PROCESSAMENTO                                 │
-│    • Verifica se alimentos existem no banco JSON                 │
-│    • Corrige quantidades para ficarem entre 50g e 400g           │
-│    • Garante que restrições são respeitadas                      │
-│    • Gera explicação para cada plano                             │
+│    • Verifica se alimentos existem no banco foods.json           │
+│    • Corrige quantidades para ficarem entre 30g e 500g           │
+│    • Garante que restrições são respeitadas (tolerância zero)    │
+│    • Valida macros (±10%) e calorias (95-105% GET)               │
+│    → Implementado em SPEC-023 (PlanValidator)                    │
 └──────────────────────────┬───────────────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────────────┐
 │ 6. PDF + RESPOSTA JSON                                           │
-│    Retorna DietGenerateResponse com 3 planos + PDF               │
+│    Retorna DietGenerateResponse com 3 planos + link do PDF       │
+│    → Implementado em SPEC-024 (Orquestrador) + SPEC-025 (Router) │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
 ### Componentes principais
 
-| Componente | Tecnologia | Responsabilidade |
-|------------|------------|------------------|
-| **API Gateway** | FastAPI (existente) | Receber input, orquestrar fluxo, retornar resposta |
-| **Extrator NL→JSON** | LLM (via API OpenAI / Anthropic / local) | Converter texto livre do cliente em struct `DietGenerateRequest` |
-| **Calculadora Nutricional** | Python puro (existente) | TMB, GET, distribuição de macros — determinístico |
-| **Gerador de Planos** | LLM (via API) | Gerar 3 variações de planos alimentares |
-| **Validador** | Python puro | Verificar output do LLM contra `foods.json`, corrigir discrepâncias |
-| **Banco de Alimentos** | `data/foods.json` (existente) | 68+ alimentos com tabela nutricional por 100g |
-| **Gerador de PDF** | ReportLab (existente) | PDF profissional com os 3 planos |
+| Componente | Tecnologia | Responsabilidade | Spec |
+|------------|------------|------------------|:----:|
+| **API Gateway** | FastAPI | Receber input, orquestrar fluxo, retornar resposta | SPEC-025 |
+| **Extrator NL→JSON** | DeepSeek V4 Pro (API) | Converter texto livre do cliente em struct `PerfilExtraido` | SPEC-020 |
+| **Calculadora Nutricional** | Python puro | TMB, GET, distribuição de macros — determinístico, offline | — |
+| **Gerador de Planos** | DeepSeek V4 Pro (API) | Gerar 3 variações de planos alimentares em 1 chamada | SPEC-022 |
+| **Validador** | Python puro | Verificar output do LLM contra `foods.json`, corrigir discrepâncias | SPEC-023 |
+| **Expansor de Restrições** | Python puro | Converter restrições genéricas ("peixe") em lista concreta | SPEC-021 |
+| **Banco de Alimentos** | `data/foods.json` | 68 alimentos em 8 categorias com tabela nutricional por 100g | SPEC-012 |
+| **Gerador de PDF** | ReportLab | PDF profissional consolidado com os 3 planos + capa + disclaimer | — |
+| **Orquestrador** | Python | Coordenar fluxo completo: extração → cálculo → geração → validação → persistência → PDF | SPEC-024 |
 
 ### Como a IA processa o input do cliente
 
-O **Extrator NL→JSON** recebe o texto livre e retorna um JSON com esta estrutura exata:
+O **Extrator NL→JSON** (SPEC-020) recebe o texto livre e retorna um JSON com esta estrutura exata:
 
 ```json
 {
@@ -139,6 +233,7 @@ O **Extrator NL→JSON** recebe o texto livre e retorna um JSON com esta estrutu
   },
   "preferencias": ["alimento1", "alimento2", ...],
   "restricoes": ["alimento_proibido1", ...],
+  "condicoes": ["gravidez", "diabetes", "vegano", ...],
   "extra": {
     "refeicoes_rapidas": boolean,
     "orcamento_limitado": boolean,
@@ -147,16 +242,17 @@ O **Extrator NL→JSON** recebe o texto livre e retorna um JSON com esta estrutu
 }
 ```
 
-**Regras de extração:**
+**Regras de extração (RN-030 a RN-034, RN-040 a RN-043):**
 - Se o cliente não especificar sexo, idade, peso ou altura → retornar erro pedindo os dados faltantes (não inferir)
-- Se o nível de atividade for ambíguo → mapear para o mais próximo (ex: "treino 3x/semana" → moderado)
-- Se o objetivo for ambíguo → perguntar (não inferir) ou inferir por contexto de peso
+- Se o nível de atividade for ambíguo → mapear para o mais próximo (ex: "treino 3x/semana" → moderado) e informar o usuário
+- Se o objetivo for ambíguo → inferir por IMC (RN-032) e informar o usuário
 - Alimentos mencionados como preferidos vão para `preferencias`
 - Alimentos explicitamente rejeitados (ex: "não como X", "detesto Y") vão para `restricoes`
+- Condições especiais detectadas vão para `condicoes` (SPEC-021 expande para lista concreta)
 
 ### Como os 3 planos são diferenciados entre si
 
-O **Gerador de Planos** recebe os macros calculados e o perfil do cliente, e gera 3 variações usando **3 eixos de diferenciação obrigatórios**:
+O **Gerador de Planos** (SPEC-022) recebe os macros calculados e o perfil do cliente, e gera 3 variações usando **3 eixos de diferenciação obrigatórios** (ADR-006):
 
 | Eixo | Plano A | Plano B | Plano C |
 |------|---------|---------|---------|
@@ -166,7 +262,9 @@ O **Gerador de Planos** recebe os macros calculados e o perfil do cliente, e ger
 | **Prioridade de alimentos** | Preferidos do cliente + complementos da culinária brasileira | 50% preferidos + 50% alimentos de alta densidade nutricional | Preferidos que exigem pouco preparo + complementos convenientes |
 | **Complexidade** | Médio (cozimento simples) | Alto (variedade de ingredientes) | Baixo (mínimo preparo) |
 
-**Regra fundamental:** Nenhum alimento da lista `restricoes` pode aparecer em qualquer plano. Se o cliente rejeitou peixe, peixe não aparece em A, B ou C.
+**Regra fundamental (RN-020):** Nenhum alimento da lista `restricoes` pode aparecer em qualquer plano. Se o cliente rejeitou peixe, peixe não aparece em A, B ou C. Tolerância: 0%.
+
+**Regra de diversidade (RN-004):** Pelo menos 40% dos alimentos de cada plano devem ser diferentes dos outros dois. A sobreposição máxima permitida é de 60%. Validado pelo `PlanValidator` (SPEC-023).
 
 ---
 
@@ -198,9 +296,18 @@ O produto elimina a fricção de:
 | Taxa de conversão (visitante → plano gerado) | > 40% | Eventos de analytics no frontend |
 | Tempo médio até gerar 3 planos | < 30 segundos | Log de latência do endpoint `/generate` |
 | Taxa de erro na extração NL→JSON | < 5% | Logs de falha com texto original |
-| Planos retornados sem alimentos proibidos | 100% | Validação automática pós-geração |
+| Planos retornados sem alimentos proibidos | 100% | Validação automática pós-geração (SPEC-023) |
 | Usuários que baixam o PDF | > 60% dos que geram planos | Contagem de downloads |
 | Usuários que retornam em 7 dias | > 25% | Analytics de retenção |
+| Custo por plano gerado (DeepSeek) | < R$ 0,05 | Tokens consumidos × preço |
+
+### Modelo de monetização (futuro — SPEC-055)
+
+Na v1 (MVP), o sistema é **100% gratuito** para validação do produto. O modelo freemium está especificado na **SPEC-055** (Fase 3):
+
+- **Plano Gratuito:** 5 gerações/mês, sem histórico, sem CSV
+- **Plano Premium:** R$ 19,90/mês — ilimitado, histórico, CSV, múltiplos perfis
+- **Plano Profissional:** R$ 49,90/mês — tudo + chat multi-turno, exportação avançada
 
 ---
 
@@ -216,7 +323,7 @@ O produto elimina a fricção de:
 | **Onboarding** | % de inputs que falham na extração (dados faltantes), motivos mais comuns de falha | Alerta se taxa de falha > 15% |
 | **Negócio** | Planos gerados/dia, downloads de PDF, usuários ativos | — |
 
-### Painéis de controle necessários
+### Painéis de controle (implementados na Fase 3 — SPEC-050)
 
 1. **Dashboard operacional** (tempo real):
    - Gráfico de requisições/minuto
@@ -233,7 +340,7 @@ O produto elimina a fricção de:
    - Custo por plano gerado
    - Projeção de gastos
 
-### Logs e auditorias importantes
+### Logs e auditorias (implementados no MVP — SPEC-013/SPEC-026)
 
 | Evento | O que logar | Retenção |
 |--------|-------------|----------|
@@ -246,25 +353,66 @@ O produto elimina a fricção de:
 
 ---
 
-## 5. Fora do Escopo (v1)
+## 5. Roadmap e Fora do Escopo por Fase
 
-### O que NÃO será implementado na versão inicial
+### 5.1 Fase 1 — MVP (atual — Famílias SPEC-010, SPEC-020, SPEC-030 — 13 specs concluídas)
 
-| Item | Motivo | Quando considerar |
-|------|--------|-------------------|
-| **Chat multi-turno** (refinar plano conversando) | Complexidade de manter contexto e estado | v2 |
-| **Integração com wearables** (Apple Watch, Garmin) | Dependência de APIs externas, OAuth | v3 |
-| **Registro de refeições consumidas** (diário alimentar) | Escopo separado — é um produto diferente | Produto separado |
-| **Compartilhamento social** dos planos | Não é core | v2 |
-| **App mobile nativo** (iOS/Android) | O frontend web responsivo cobre o necessário | v3 |
-| **Suporte a dietas médicas específicas** (renal, cetogênica terapêutica, pós-bariátrica) | Requer validação médica, risco regulatório | Avaliar com consultoria especializada |
-| **Integração com delivery** (iFood, Rappi) | Dependência externa complexa | v3 |
-| **Treinos de exercício** | Escopo diferente — é um produto separado de fitness | Produto separado |
-| **Acompanhamento de peso e medidas ao longo do tempo** | Requer persistência de histórico, visualizações | v2 |
-| **Recomendação de suplementos** | Risco regulatório (ANVISA) | Avaliar com jurídico |
-| **Suporte multilíngue** (inglês, espanhol) | O mercado inicial é Brasil | v2 |
-| **Pagamento / assinatura** | v1 será gratuito para validação do produto | v2 |
+**O que está implementado:**
+- Input em texto livre (linguagem natural)
+- Extração NL→JSON via DeepSeek V4 Pro
+- Cálculo nutricional determinístico (TMB, GET, macros)
+- Geração de 3 planos com eixos temáticos fixos
+- Validação pós-geração (6 fases: estrutural, restrições, catálogo, quantidades, nutricional, diversidade)
+- Expansão de restrições genéricas para lista concreta
+- PDF consolidado com os 3 planos
+- Frontend responsivo (input + resultados)
+- Tratamento de erros em português
+- Logs estruturados em JSON com `request_id` (SPEC-013)
+- Rate limiting básico (10 req/min para anônimos)
+- Configuração via `.env`
+
+### 5.2 O que NÃO está no MVP (mas está especificado para fases futuras)
+
+| Item | Fase | Spec | Motivo |
+|------|:---:|:----:|--------|
+| **Histórico de planos** (autenticados) | Fase 2 | SPEC-040 | Requer auth completa + frontend de histórico |
+| **Feedback 👍/👎 nos planos** | Fase 2 | SPEC-041 | Depende de MVP validado para ter volume de feedback |
+| **Regeneração inteligente** (evitar alimentos da geração anterior) | Fase 2 | SPEC-042 | Requer estado entre sessões de geração |
+| **Métricas e analytics** | Fase 2 | SPEC-043 | Requer volume de uso para ter significado |
+| **Ajuste de prompts por feedback** | Fase 2 | SPEC-044 | Depende de SPEC-041 (feedback) |
+| **Rate limiting robusto** (bloqueio, custo máximo diário) | Fase 2 | SPEC-045 | MVP usa rate limiting simples; versão robusta requer mais infra |
+| **Dashboard administrativo** | Fase 3 | SPEC-050 | Requer Fase 2 concluída + volume de dados |
+| **Múltiplos provedores de IA** (OpenAI, Claude) | Fase 3 | SPEC-051 | MVP usa só DeepSeek; abstração de provider é Fase 3 |
+| **Chat multi-turno** (refinar plano conversando) | Fase 3 | SPEC-052 | Complexidade de manter contexto e estado entre turnos |
+| **Exportação CSV + PDF melhorado** | Fase 3 | SPEC-053 | MVP tem PDF básico; versão avançada requer mais formatação |
+| **Perfis de usuário salvos** (preferências, múltiplos perfis) | Fase 3 | SPEC-054 | Requer Fase 2 + autenticação completa |
+| **Assinatura e monetização** (Freemium) | Fase 3 | SPEC-055 | MVP é gratuito para validação |
+
+### 5.3 O que NÃO está em nenhuma spec (fora do roadmap atual)
+
+| Item | Motivo |
+|------|--------|
+| **Integração com wearables** (Apple Watch, Garmin) | Dependência de APIs externas, OAuth. Fora do escopo atual. |
+| **Registro de refeições consumidas** (diário alimentar) | Escopo separado — é um produto diferente. |
+| **App mobile nativo** (iOS/Android) | O frontend web responsivo cobre o necessário. |
+| **Dietas médicas específicas** (renal, cetogênica terapêutica, pós-bariátrica) | Requer validação médica, risco regulatório. |
+| **Integração com delivery** (iFood, Rappi) | Dependência externa complexa. |
+| **Treinos de exercício** | Escopo diferente — é um produto separado de fitness. |
+| **Recomendação de suplementos** | Risco regulatório (ANVISA). |
+| **Suporte multilíngue** (inglês, espanhol) | O mercado inicial é Brasil. |
 
 ---
 
-> **Para a IA que vai gerar código:** Este documento define O QUE construir. Consulte `docs/architecture.md` para COMO construir (stack, estrutura de pastas, padrões). Consulte `docs/Registros de decisão de arquitetura.md` para entender as escolhas já feitas.
+> **Para a IA que vai gerar código:**
+>
+> 1. **Leia primeiro** a seção 0 (Estrutura da Documentação) para entender o mapa completo
+> 2. Este documento (`visao.md`) define **O QUE** construir e **QUANDO** (roadmap)
+> 3. Consulte `docs/roadmap.md` para o **status atualizado** de cada SPEC e progresso geral
+> 4. Consulte `docs/arquitetura.md` para **COMO** construir (stack, camadas, modelos, prompts)
+> 5. Consulte `docs/regras.md` para as **59 regras de negócio** (RN-001 a RN-142) — referencie os IDs no código
+> 6. Consulte `docs/requisitos.md` para os **72 requisitos** (46 RF + 26 RNF) com priorização MoSCoW
+> 7. Consulte `docs/fluxos.md` para a sequência exata de cada fluxo e tratamento de exceções
+> 8. Consulte `docs/ADR.md` para as **6 decisões arquiteturais** já tomadas (não as contradiga)
+> 9. Consulte `docs/licoes-aprendidas.md` para as **7 lições aprendidas** (não repita erros conhecidos)
+> 10. Consulte `docs/specs/SPEC-XXX-*.md` para o detalhamento de cada feature específica
+> 11. **Nunca** implemente specs de fases futuras sem que a fase anterior esteja concluída
