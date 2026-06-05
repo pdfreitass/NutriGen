@@ -10,6 +10,7 @@ from app.banco_dados import criar_tabelas, fechar_conexao
 from app.routers.dieta import router as diet_router
 from app.routers.autenticacao import router as auth_router
 from app.routers.admin import router as admin_router
+from app.routers.alimentos import router as foods_router
 from app.middleware.limite_taxa import rate_limit_middleware
 from app.middleware.id_requisicao import request_id_middleware
 from app.middleware.cabecalhos_seguranca import security_headers_middleware
@@ -92,6 +93,7 @@ async def rate_limit_handler(request: Request, call_next):
 app.include_router(auth_router)
 app.include_router(diet_router)
 app.include_router(admin_router)
+app.include_router(foods_router)
 
 # Servir o frontend estático (HTML, CSS, JS) como SPA
 # html=True: qualquer rota não tratada pelos routers acima serve index.html

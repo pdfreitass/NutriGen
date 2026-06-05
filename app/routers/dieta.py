@@ -29,6 +29,7 @@ from app.models.esquemas import (
     DietGenerateRequestV2,
     DietGenerateResponseV2,
     FeedbackRequest,
+    FoodSelectionRequest,
 )
 from app.use_cases.gerar_planos import GerarPlanosUseCase
 from app.services.servico_autenticacao import verificar_token_jwt
@@ -180,6 +181,51 @@ def generate_diet(
 
 
 # ═══════════════════════════════════════════════════════════
+# POST /api/diet/generate-v2 (SPEC-060/063)
+# ═══════════════════════════════════════════════════════════
+
+@router.post("/generate-v2", response_model=DietGenerateResponseV2)
+def generate_diet_v2(request: FoodSelectionRequest):
+    """Gera 3 planos alimentares a partir de alimentos selecionados pelo usuário.
+
+    Modo determinístico: não depende de IA para escolher alimentos.
+    A IA é usada apenas para nomes/descrições (fallback se offline).
+    """
+    preferidos = {a.nome for a in request.alimentos_selecionados if a.preferido}
+    qtd_max = {
+        a.nome: a.qtd_max_dia_g
+        for a in request.alimentos_selecionados
+        if a.qtd_max_dia_g is not None
+    }
+    alimentos_nomes = [a.nome for a in request.alimentos_selecionados]
+
+    try:
+        resultado = _use_case.executar_v2(
+            sexo=request.sexo,
+            idade=request.idade,
+            peso_kg=request.peso_kg,
+            altura_cm=request.altura_cm,
+            nivel_atividade=request.nivel_atividade,
+            alimentos_nomes=alimentos_nomes,
+            preferidos=preferidos,
+            qtd_max=qtd_max,
+            texto_rotina=request.texto_rotina,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Erro inesperado na geração v2")
+        raise HTTPException(status_code=500, detail="Erro interno ao gerar planos.")
+
+    pdf_url = resultado.get("pdf_url")
+    if pdf_url:
+        pdf_id = pdf_url.split("/")[-1].replace(".pdf", "")
+        _pdf_cache[pdf_id] = pdf_url.split("/")[-1]
+        resultado["pdf_url"] = f"/api/diet/{pdf_id}/pdf"
+    else:
+        resultado["pdf_url"] = None
+
+    return resultado
 # GET /api/diet/{pdf_id}/pdf
 # ═══════════════════════════════════════════════════════════
 

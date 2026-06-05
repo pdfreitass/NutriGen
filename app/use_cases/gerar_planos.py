@@ -41,6 +41,7 @@ from app.services.calculadora_nutricional import NutritionCalculator
 from app.services.servico_geracao_planos import PlanGeneratorService
 from app.services.validador_planos import PlanValidator
 from app.services.expansor_restricoes import RestrictionExpander
+from app.services.distribuidor_refeicoes import MealDistributor
 from app.utils.gerador_pdf import gerar_pdf_adaptado
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,7 @@ class GerarPlanosUseCase:
         self._generator = PlanGeneratorService()
         self._validator = PlanValidator()
         self._expander = RestrictionExpander()
+        self._distributor = MealDistributor()
 
     # ─── Modo formulário (principal) ──────────────────
 
@@ -113,6 +115,66 @@ class GerarPlanosUseCase:
             perfil.rotina.objetivo = self._extractor._inferir_objetivo_por_imc(perfil)
 
         return self._executar_fluxo(perfil, texto, request_id, usuario_id=usuario_id, evitar_alimentos=evitar_alimentos)
+
+    # ─── Modo seleção de alimentos (SPEC-060/063) ──────
+
+    def executar_v2(
+        self,
+        sexo: str,
+        idade: int,
+        peso_kg: float,
+        altura_cm: float,
+        nivel_atividade: str,
+        alimentos_nomes: list[str],
+        preferidos: set[str],
+        qtd_max: dict[str, float | None],
+        texto_rotina: str = "",
+    ) -> dict:
+        """Gera planos deterministicamente a partir de alimentos selecionados."""
+        request_id = str(uuid.uuid4())
+        logger.info("[%s] Geracao v2 | alimentos=%d", request_id, len(alimentos_nomes))
+
+        perfil = PerfilExtraido(
+            perfil=Perfil(sexo=sexo, idade=idade, peso_kg=peso_kg, altura_cm=altura_cm),
+            rotina=RotinaExtraida(nivel_atividade=nivel_atividade, objetivo=None),
+        )
+        if not perfil.rotina.objetivo:
+            perfil.rotina.objetivo = self._extractor._inferir_objetivo_por_imc(perfil)
+
+        metas = self._calculator.calcular(perfil)
+
+        planos_raw = self._distributor.distribuir(
+            alimentos_nomes=alimentos_nomes,
+            preferidos=preferidos,
+            qtd_max=qtd_max,
+            metas={
+                "tmb": metas.tmb, "get_calorico": metas.get_calorico,
+                "proteina_g": metas.proteina_g, "carboidrato_g": metas.carboidrato_g,
+                "gordura_g": metas.gordura_g,
+            },
+        )
+
+        planos_gerados = PlanosGerados(planos=[
+            PlanoGerado(
+                nome=p["nome"], descricao=p["descricao"], eixo=p["eixo"],
+                objetivo=p["objetivo"], calorias_estimadas=p["calorias_estimadas"],
+                refeicoes=[RefeicaoGerada(
+                    nome=r["nome"], horario=r.get("horario"),
+                    alimentos=[ItemGerado(**a) for a in r.get("alimentos", [])],
+                ) for r in p.get("refeicoes", [])],
+            ) for p in planos_raw
+        ])
+
+        pdf_url = self._gerar_pdf(planos_gerados, perfil, metas, request_id)
+
+        return {
+            "paciente": {"sexo": sexo, "idade": idade, "peso_kg": peso_kg, "altura_cm": altura_cm},
+            "tmb": metas.tmb, "get_calorico": metas.get_calorico,
+            "objetivo": perfil.rotina.objetivo,
+            "planos": planos_gerados.planos, "pdf_url": pdf_url,
+            "request_id": request_id, "sessao_id": None,
+            "avisos": [], "severidade_restricoes": "preferencia",
+        }
 
     # ─── Modo texto livre (legado) ────────────────────
 

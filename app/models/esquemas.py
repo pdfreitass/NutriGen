@@ -441,3 +441,42 @@ class FeedbackRequest(BaseModel):
 class FeedbackResponse(BaseModel):
     """Resposta ao envio de feedback."""
     mensagem: str = Field(..., description="Mensagem de confirmação")
+
+
+# ─── SPEC-060/063: Seleção de Alimentos e Generate V2 ──
+
+class AlimentoSelecionado(BaseModel):
+    """Alimento selecionado pelo usuário na tela de seleção."""
+    nome: str = Field(..., description="Nome do alimento (deve existir no catálogo)")
+    preferido: bool = Field(False, description="True se o usuário marcou como favorito")
+    qtd_max_dia_g: Optional[float] = Field(None, description="Quantidade máxima diária em gramas")
+
+
+class FoodSelectionRequest(BaseModel):
+    """Requisição de geração com alimentos selecionados pelo usuário."""
+    sexo: Literal["masculino", "feminino"] = Field(..., description="Sexo biológico")
+    idade: int = Field(..., ge=1, le=120, description="Idade em anos")
+    peso_kg: float = Field(..., ge=20, le=500, description="Peso em kg")
+    altura_cm: float = Field(..., ge=50, le=280, description="Altura em cm")
+    nivel_atividade: Literal["sedentario", "moderado", "ativo"] = Field(
+        ..., description="Nível de atividade física"
+    )
+    alimentos_selecionados: List[AlimentoSelecionado] = Field(
+        ..., min_length=5, max_length=50, description="Alimentos selecionados (mín 5)"
+    )
+    texto_rotina: str = Field(
+        "", max_length=1500, description="Descrição da rotina (opcional)"
+    )
+
+    @model_validator(mode="after")
+    def validate_proteina_presente(self):
+        """RN-143: Pelo menos 1 alimento de categoria proteica."""
+        from app.infrastructure.catalogo_alimentos import food_catalog
+        categorias_proteina = {"Carnes e Peixes", "Ovos", "Laticínios"}
+        for alimento in self.alimentos_selecionados:
+            found = food_catalog.buscar_por_nome(alimento.nome)
+            if found and found.categoria in categorias_proteina:
+                return self
+        raise ValueError(
+            "Inclua pelo menos 1 fonte de proteína (frango, ovo, carne, peixe, leite...)."
+        )
