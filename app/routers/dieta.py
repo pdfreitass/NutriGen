@@ -116,6 +116,7 @@ def generate_diet(
             nivel_atividade=request.nivel_atividade,
             texto=texto,
             usuario_id=usuario_id,
+            evitar_alimentos=request.evitar_alimentos,
         )
     except CamposObrigatoriosAusentesError as e:
         campos = ", ".join(e.campos_faltantes)

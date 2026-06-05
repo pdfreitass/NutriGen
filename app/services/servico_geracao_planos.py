@@ -121,6 +121,7 @@ class PlanGeneratorService:
         perfil: PerfilExtraido,
         metas: MetasNutricionais,
         texto_original: str = "",
+        evitar_alimentos: list[str] | None = None,
     ) -> PlanosGerados:
         """Gera 3 planos alimentares distintos via API DeepSeek.
 
@@ -128,6 +129,9 @@ class PlanGeneratorService:
             perfil: PerfilExtraido com dados demográficos, rotina, preferências e restrições.
             metas: MetasNutricionais com TMB, GET e macros calculados.
             texto_original: Texto original do usuário (para contexto adicional).
+            evitar_alimentos: Alimentos a evitar na regeneração (SPEC-042).
+                              Se fornecido, temperatura sobe para 0.85 e prompt
+                              inclui instrução de evitação.
 
         Returns:
             PlanosGerados com exatamente 3 PlanosGerados validados.
@@ -148,6 +152,15 @@ class PlanGeneratorService:
         # 3. Montar system prompt com restrições expandidas
         system_prompt = self._build_system_prompt(restricoes_expandidas)
 
+        # SPEC-042: Adicionar instrução de evitação ao prompt
+        if evitar_alimentos:
+            evitar_str = ", ".join(evitar_alimentos[:30])
+            system_prompt += (
+                f"\n\nREGENERATION CONTEXT: The user is regenerating plans. "
+                f"AVOID using these foods that appeared in previous plans: {evitar_str}. "
+                f"Use different foods from the catalog to create fresh, distinct meal plans."
+            )
+
         # 4. Montar user prompt com dados do perfil + metas + catálogo
         user_prompt = self._build_user_prompt(
             perfil, metas, restricoes_expandidas, catalogo_texto, texto_original
@@ -160,10 +173,13 @@ class PlanGeneratorService:
             {"role": "user", "content": user_prompt},
         ]
 
+        # SPEC-042: Temperatura mais alta para maior variedade
+        temperatura = 0.85 if evitar_alimentos else 0.7
+
         try:
             response = self._client.chat_completion(
                 messages=messages,
-                temperature=0.7,
+                temperature=temperatura,
                 response_format={"type": "json_object"},
                 timeout=GENERATION_TIMEOUT,
             )

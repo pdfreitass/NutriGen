@@ -67,6 +67,7 @@ class GerarPlanosUseCase:
         nivel_atividade: str,
         texto: str,
         usuario_id: int | None = None,
+        evitar_alimentos: list[str] | None = None,
     ) -> dict:
         """Executa o fluxo com dados do formulário + texto da rotina.
 
@@ -76,6 +77,7 @@ class GerarPlanosUseCase:
         Args:
             usuario_id: ID do usuário autenticado. Se fornecido, a sessão
                         é persistida no banco para histórico (SPEC-040).
+            evitar_alimentos: Lista de alimentos a evitar na regeneração (SPEC-042).
         """
         request_id = str(uuid.uuid4())
         logger.info(
@@ -110,7 +112,7 @@ class GerarPlanosUseCase:
         if not perfil.rotina.objetivo:
             perfil.rotina.objetivo = self._extractor._inferir_objetivo_por_imc(perfil)
 
-        return self._executar_fluxo(perfil, texto, request_id, usuario_id=usuario_id)
+        return self._executar_fluxo(perfil, texto, request_id, usuario_id=usuario_id, evitar_alimentos=evitar_alimentos)
 
     # ─── Modo texto livre (legado) ────────────────────
 
@@ -140,10 +142,13 @@ class GerarPlanosUseCase:
     def _executar_fluxo(
         self, perfil: PerfilExtraido, texto: str, request_id: str,
         usuario_id: int | None = None,
+        evitar_alimentos: list[str] | None = None,
     ) -> dict:
         """Executa o fluxo comum: cálculo → restrições → geração → validação → PDF.
 
         Se usuario_id for fornecido, persiste a sessão no banco (SPEC-040).
+        Se evitar_alimentos for fornecido, passa ao gerador para aumentar
+        temperatura e evitar repetição de alimentos (SPEC-042).
         """
 
         # Cálculo nutricional
@@ -162,7 +167,7 @@ class GerarPlanosUseCase:
             raise HTTPException(status_code=400, detail=expanded.motivo_bloqueio)
 
         # Geração IA
-        planos = self._gerar_com_retry(perfil, metas, texto, request_id)
+        planos = self._gerar_com_retry(perfil, metas, texto, request_id, evitar_alimentos=evitar_alimentos)
 
         # Validação
         result = self._validator.validar(
@@ -176,7 +181,7 @@ class GerarPlanosUseCase:
                 request_id,
             )
             try:
-                planos = self._gerar(perfil, metas, texto, request_id)
+                planos = self._gerar(perfil, metas, texto, request_id, evitar_alimentos=evitar_alimentos)
                 result = self._validator.validar(
                     planos, metas, expanded.alimentos_proibidos, food_catalog
                 )
@@ -236,18 +241,23 @@ class GerarPlanosUseCase:
     def _gerar(
         self, perfil: PerfilExtraido, metas: MetasNutricionais,
         texto: str, request_id: str,
+        evitar_alimentos: list[str] | None = None,
     ) -> PlanosGerados:
         logger.info("[%s] Etapa 3/6: Gerando planos via DeepSeek...", request_id)
-        planos = self._generator.gerar(perfil, metas, texto_original=texto)
+        planos = self._generator.gerar(
+            perfil, metas, texto_original=texto,
+            evitar_alimentos=evitar_alimentos,
+        )
         logger.info("[%s] Planos gerados: %d", request_id, len(planos.planos))
         return planos
 
     def _gerar_com_retry(
         self, perfil: PerfilExtraido, metas: MetasNutricionais,
         texto: str, request_id: str,
+        evitar_alimentos: list[str] | None = None,
     ) -> PlanosGerados:
         try:
-            return self._gerar(perfil, metas, texto, request_id)
+            return self._gerar(perfil, metas, texto, request_id, evitar_alimentos=evitar_alimentos)
         except DeepSeekError:
             logger.error("[%s] DeepSeek falhou na geracao", request_id)
             raise

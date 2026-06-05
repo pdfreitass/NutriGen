@@ -312,6 +312,11 @@ class DietGenerateRequestV2(BaseModel):
         max_length=1500,
         description="Descrição da rotina, objetivos, preferências e restrições",
     )
+    evitar_alimentos: List[str] = Field(
+        default_factory=list,
+        max_length=50,
+        description="Alimentos a evitar na regeneração (SPEC-042). Cada item deve ser um nome de alimento.",
+    )
 
 
 class DietGenerateResponseV2(BaseModel):

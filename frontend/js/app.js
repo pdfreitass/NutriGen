@@ -10,6 +10,10 @@ const state = {
     currentUser: null,       // { id, nome_completo, cpf, email, ... }
     currentPage: 'login',
     dietResult: null,        // DietGenerateResponse
+    // SPEC-042: Regeneration tracking
+    lastFormData: null,      // { sexo, idade, peso_kg, altura_cm, nivel_atividade, texto }
+    regenerationCount: 0,
+    regenerationStartTime: null,
 };
 
 // ─── DOM Cache ────────────────────────────────
@@ -515,7 +519,7 @@ function renderResults(result) {
     const actions = document.createElement('div');
     actions.className = 'results-actions';
     actions.innerHTML = `
-        <button class="btn btn-secondary" onclick="document.getElementById('btn-new-diet').click()">
+        <button class="btn btn-secondary" onclick="_regenerateDiet()">
             🔄 Gerar Novamente
         </button>
     `;
@@ -1100,6 +1104,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 texto: sanitized,
             };
 
+            // SPEC-042: Save form data for regeneration
+            state.lastFormData = { ...requestBody };
+            state.regenerationCount = 0;
+            state.regenerationStartTime = null;
+
             // Loading com estágios dinâmicos
             const stages = [
                 'Analisando sua rotina...',
@@ -1301,5 +1310,82 @@ async function _deleteHistory(sessaoId) {
 
     } catch (err) {
         alert('Erro ao excluir. Tente novamente.');
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// SPEC-042 — Regeneração Inteligente
+// ═══════════════════════════════════════════════════════════
+
+function _showToast(message, duration = 4000) {
+    const existing = document.getElementById('regenerate-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'regenerate-toast';
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add('toast-visible'));
+
+    setTimeout(() => {
+        toast.classList.remove('toast-visible');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+async function _regenerateDiet() {
+    if (!state.lastFormData) {
+        _showToast('Nenhum dado da geração anterior encontrado.');
+        return;
+    }
+
+    // SPEC-042 REGEN-05: Contador de regenerações
+    const now = Date.now();
+    if (!state.regenerationStartTime || (now - state.regenerationStartTime) > 120000) {
+        state.regenerationCount = 0;
+        state.regenerationStartTime = now;
+    }
+    state.regenerationCount++;
+
+    if (state.regenerationCount >= 3) {
+        _showToast('💡 Que tal ajustar sua rotina para mais variação?', 6000);
+    }
+
+    // SPEC-042 REGEN-04: Coletar alimentos dos planos atuais
+    const evitarAlimentos = [];
+    if (state.dietResult && state.dietResult.planos) {
+        for (const plano of state.dietResult.planos) {
+            if (plano.refeicoes) {
+                for (const ref of plano.refeicoes) {
+                    if (ref.alimentos) {
+                        for (const alimento of ref.alimentos) {
+                            if (alimento.nome && !evitarAlimentos.includes(alimento.nome)) {
+                                evitarAlimentos.push(alimento.nome);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // SPEC-042 REGEN-06: Toast informativo
+    _showToast('🔄 Gerando novos planos com alimentos diferentes dos anteriores...');
+
+    // Reenviar com evitar_alimentos
+    const requestBody = {
+        ...state.lastFormData,
+        evitar_alimentos: evitarAlimentos,
+    };
+
+    try {
+        const result = await apiRequest('POST', '/api/diet/generate', requestBody);
+        state.dietResult = result;
+        renderResults(result);
+    } catch (err) {
+        _showToast('❌ ' + err.message, 5000);
     }
 }
