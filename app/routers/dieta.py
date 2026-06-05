@@ -13,7 +13,7 @@ import html
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 from app.excecoes import (
@@ -27,6 +27,8 @@ from app.excecoes import (
 )
 from app.models.esquemas import DietGenerateRequestV2, DietGenerateResponseV2
 from app.use_cases.gerar_planos import GerarPlanosUseCase
+from app.services.servico_autenticacao import verificar_token_jwt
+from app.infrastructure.repositorio_sessao import sessao_repo
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +78,10 @@ def _sanitizar_texto(texto: str) -> str:
 # ═══════════════════════════════════════════════════════════
 
 @router.post("/generate", response_model=DietGenerateResponseV2)
-def generate_diet(request: DietGenerateRequestV2):
+def generate_diet(
+    request: DietGenerateRequestV2,
+    authorization: str = Header(None),
+):
     """Gera 3 planos alimentares personalizados com dados do formulário + rotina.
 
     Fluxo:
@@ -87,6 +92,7 @@ def generate_diet(request: DietGenerateRequestV2):
     5. Gera 3 planos distintos via IA
     6. Valida e corrige automaticamente
     7. Gera PDF consolidado
+    8. Se autenticado, persiste no histórico (SPEC-040)
     """
     # Sanitizar texto
     texto = _sanitizar_texto(request.texto)
@@ -97,6 +103,9 @@ def generate_diet(request: DietGenerateRequestV2):
             detail="Descreva sua rotina, objetivos e preferências (mínimo 10 caracteres).",
         )
 
+    # Extrair usuario_id se autenticado (SPEC-040)
+    usuario_id = _get_usuario_id(authorization)
+
     # Executar caso de uso com dados estruturados + texto
     try:
         resultado = _use_case.executar_com_dados(
@@ -106,6 +115,7 @@ def generate_diet(request: DietGenerateRequestV2):
             altura_cm=request.altura_cm,
             nivel_atividade=request.nivel_atividade,
             texto=texto,
+            usuario_id=usuario_id,
         )
     except CamposObrigatoriosAusentesError as e:
         campos = ", ".join(e.campos_faltantes)
@@ -204,3 +214,72 @@ def download_pdf(pdf_id: str):
         media_type="application/pdf",
         filename=f"plano_alimentar_{pdf_id[:8]}.pdf",
     )
+
+
+# ═══════════════════════════════════════════════════════════
+# Helpers de autenticação (SPEC-040)
+# ═══════════════════════════════════════════════════════════
+
+def _get_usuario_id(authorization: str = Header(None)) -> int | None:
+    """Extrai usuario_id do header Authorization: Bearer <JWT>."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization[7:]
+    user_id = verificar_token_jwt(token)
+    return int(user_id) if user_id else None
+
+
+def _requer_autenticacao(usuario_id: int | None) -> int:
+    """Garante que o usuário está autenticado. Levanta 401 se não."""
+    if usuario_id is None:
+        raise HTTPException(status_code=401, detail="Autenticação necessária.")
+    return usuario_id
+
+
+# ═══════════════════════════════════════════════════════════
+# GET /api/diet/history (SPEC-040)
+# ═══════════════════════════════════════════════════════════
+
+@router.get("/history")
+def get_history(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50),
+    usuario_id: int | None = Header(None, alias="X-User-Id"),
+    authorization: str = Header(None),
+):
+    """Retorna histórico paginado de gerações do usuário autenticado."""
+    # Autenticar via JWT
+    uid = _get_usuario_id(authorization)
+    if uid is None:
+        raise HTTPException(status_code=401, detail="Autenticação necessária.")
+
+    items, total = sessao_repo.listar_historico(uid, page=page, limit=limit)
+    pages = max(1, (total + limit - 1) // limit)
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": pages,
+    }
+
+
+# ═══════════════════════════════════════════════════════════
+# DELETE /api/diet/{sessao_id} (SPEC-040 — LGPD)
+# ═══════════════════════════════════════════════════════════
+
+@router.delete("/{sessao_id:int}")
+def delete_sessao(
+    sessao_id: int,
+    authorization: str = Header(None),
+):
+    """Exclui uma sessão de geração e todos os dados associados."""
+    uid = _get_usuario_id(authorization)
+    if uid is None:
+        raise HTTPException(status_code=401, detail="Autenticação necessária.")
+
+    excluido = sessao_repo.excluir_sessao(sessao_id, uid)
+    if not excluido:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada.")
+
+    return {"mensagem": "Sessão excluída com sucesso."}

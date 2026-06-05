@@ -28,6 +28,7 @@ function cacheDom() {
     dom.pageResetPassword = $('#page-reset-password');
     dom.pageDiet = $('#page-diet');
     dom.pageResults = $('#page-results');
+    dom.pageHistory = $('#page-history');
 
     // Login form
     dom.loginForm = $('#login-form');
@@ -107,7 +108,7 @@ function cacheDom() {
 // ─── Navigation ───────────────────────────────
 function showPage(pageName) {
     // Hide all pages
-    ['login', 'register', 'forgot-password', 'reset-password', 'diet', 'results'].forEach(p => {
+    ['login', 'register', 'forgot-password', 'reset-password', 'diet', 'results', 'history'].forEach(p => {
         const key = 'page' + p.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
         const el = dom[key];
         if (el) el.classList.add('hidden');
@@ -120,6 +121,7 @@ function showPage(pageName) {
         'reset-password': dom.pageResetPassword,
         diet: dom.pageDiet,
         results: dom.pageResults,
+        history: dom.pageHistory,
     };
 
     const target = pageMap[pageName];
@@ -145,8 +147,12 @@ function updateHeader() {
     if (state.currentUser) {
         dom.headerUser.classList.remove('hidden');
         dom.headerUserName.textContent = state.currentUser.nome_completo.split(' ')[0];
+        const navHistory = document.getElementById('nav-history');
+        if (navHistory) navHistory.classList.remove('hidden');
     } else {
         dom.headerUser.classList.add('hidden');
+        const navHistory = document.getElementById('nav-history');
+        if (navHistory) navHistory.classList.add('hidden');
     }
 }
 
@@ -1173,6 +1179,127 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // ── SPEC-040: History navigation ──
+    const navHistory = document.getElementById('nav-history');
+    if (navHistory) {
+        navHistory.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!authToken) { showPage('login'); return; }
+            showPage('history');
+            _loadHistory(1);
+        });
+    }
+
     // ── Show login page by default ──
     showPage('login');
 });
+
+
+// ═══════════════════════════════════════════════════════════
+// SPEC-040 — Histórico de Gerações
+// ═══════════════════════════════════════════════════════════
+
+const HISTORY_PAGE_SIZE = 10;
+
+async function _loadHistory(page = 1) {
+    const listEl = document.getElementById('history-list');
+    const pagEl = document.getElementById('history-pagination');
+    if (!listEl || !pagEl) return;
+
+    listEl.innerHTML = '<div class="loading-spinner">Carregando histórico...</div>';
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/diet/history?page=${page}&limit=${HISTORY_PAGE_SIZE}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (resp.status === 401) {
+            listEl.innerHTML = '<p class="empty-state">Faça login para ver seu histórico.</p>';
+            return;
+        }
+
+        const data = await resp.json();
+
+        if (!data.items || data.items.length === 0) {
+            listEl.innerHTML = '<p class="empty-state">Nenhum plano gerado ainda. 🍽️</p>';
+            pagEl.innerHTML = '';
+            return;
+        }
+
+        // Render items
+        listEl.innerHTML = data.items.map(item => {
+            const dataFormatada = item.data_geracao
+                ? new Date(item.data_geracao).toLocaleDateString('pt-BR')
+                : '-';
+            const objetivoLabel = {
+                'perda_de_peso': '📉 Perda de Peso',
+                'manutencao': '⚖️ Manutenção',
+                'ganho_de_massa': '💪 Ganho de Massa',
+            }[item.objetivo] || item.objetivo;
+
+            const planosResumo = (item.resumo && item.resumo.planos)
+                ? item.resumo.planos.map(p => `<span class="history-plan-tag">${p.nome}</span>`).join(' ')
+                : '';
+
+            const pdfBtn = item.pdf_disponivel
+                ? `<a href="${API_BASE}${item.pdf_url}" target="_blank" class="btn btn-sm btn-success">📄 PDF</a>`
+                : '<span class="text-muted">PDF expirado</span>';
+
+            return `
+                <div class="history-card">
+                    <div class="history-card-header">
+                        <span class="history-date">${dataFormatada}</span>
+                        <span class="history-goal">${objetivoLabel}</span>
+                        <span class="history-kcal">${(item.get_calorico || 0).toFixed(0)} kcal</span>
+                    </div>
+                    <div class="history-card-body">
+                        <div class="history-plans">${planosResumo}</div>
+                        <div class="history-actions">
+                            ${pdfBtn}
+                            <button class="btn btn-sm btn-danger" onclick="_deleteHistory(${item.sessao_id})">🗑️ Excluir</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Pagination
+        pagEl.innerHTML = '';
+        if (data.pages > 1) {
+            for (let p = 1; p <= data.pages; p++) {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm ' + (p === data.page ? 'btn-primary' : 'btn-secondary');
+                btn.textContent = p;
+                btn.addEventListener('click', () => _loadHistory(p));
+                pagEl.appendChild(btn);
+            }
+        }
+
+    } catch (err) {
+        listEl.innerHTML = '<p class="error-msg">Erro ao carregar histórico.</p>';
+    }
+}
+
+async function _deleteHistory(sessaoId) {
+    if (!confirm('Tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita.')) return;
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/diet/${sessaoId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!resp.ok) {
+            alert('Erro ao excluir. Tente novamente.');
+            return;
+        }
+
+        // Recarregar página atual
+        const pagEl = document.getElementById('history-pagination');
+        const currentPage = pagEl.querySelector('.btn-primary')?.textContent || '1';
+        _loadHistory(parseInt(currentPage));
+
+    } catch (err) {
+        alert('Erro ao excluir. Tente novamente.');
+    }
+}

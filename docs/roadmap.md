@@ -118,6 +118,8 @@ Qualidade:  [██████████████████████�
 
 ## 💡 Backlog de Ideias
 
+> **Novas ideias são registradas primeiro em [`docs/ideias-sugeridas.md`](ideias-sugeridas.md)** e só entram aqui após aprovação do desenvolvedor. Consulte o banco de ideias para ver o que está em discussão.
+
 | # | Ideia | Complexidade | Impacto |
 |:-:|-------|:-----------:|:-------:|
 | 1 | Aplicativo mobile nativo (iOS/Android) com notificações push | Alta | Alto |

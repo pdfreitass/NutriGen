@@ -357,3 +357,35 @@ class ExpandedRestrictions(BaseModel):
         default="",
         description="Motivo do bloqueio, se aplicável",
     )
+
+
+# ─── SPEC-040: Histórico de Gerações ────────────────────
+
+class PlanoResumo(BaseModel):
+    """Resumo leve de um plano no histórico (sem refeições)."""
+    nome: str = Field(..., description="Nome do plano")
+    eixo: str = Field(..., description="Eixo de diferenciação")
+    calorias_estimadas: float = Field(..., description="Calorias estimadas do plano")
+
+
+class HistoricoItem(BaseModel):
+    """Um item do histórico de gerações do usuário."""
+    sessao_id: int = Field(..., description="ID da sessão de geração")
+    data_geracao: Optional[str] = Field(None, description="Data de geração (ISO 8601)")
+    objetivo: str = Field(..., description="Objetivo da dieta")
+    get_calorico: float = Field(..., description="GET em kcal")
+    tmb: float = Field(..., description="TMB em kcal")
+    pdf_disponivel: bool = Field(..., description="True se PDF ainda disponível (7 dias)")
+    pdf_url: Optional[str] = Field(None, description="URL relativa do PDF, se disponível")
+    resumo: dict = Field(
+        default_factory=lambda: {"planos": []},
+        description="Resumo dos planos: { planos: [{ nome, eixo, calorias_estimadas }] }",
+    )
+
+
+class HistoricoResponse(BaseModel):
+    """Resposta paginada do histórico de gerações."""
+    items: List[HistoricoItem] = Field(..., description="Itens do histórico")
+    total: int = Field(..., description="Total de registros")
+    page: int = Field(..., description="Página atual")
+    pages: int = Field(..., description="Total de páginas")

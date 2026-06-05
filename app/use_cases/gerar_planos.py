@@ -11,9 +11,11 @@ Dois modos de entrada:
 
 import logging
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 
+from app.banco_dados import SessionFactory
 from app.excecoes import (
     CamposObrigatoriosAusentesError,
     DeepSeekError,
@@ -25,6 +27,7 @@ from app.excecoes import (
     ValorFisiologicoInvalidoError,
 )
 from app.infrastructure.catalogo_alimentos import food_catalog
+from app.models.database.sessao_geracao import SessaoGeracao, PlanoAlimentar
 from app.models.esquemas import (
     MetasNutricionais,
     Perfil,
@@ -63,16 +66,22 @@ class GerarPlanosUseCase:
         altura_cm: float,
         nivel_atividade: str,
         texto: str,
+        usuario_id: int | None = None,
     ) -> dict:
         """Executa o fluxo com dados do formulário + texto da rotina.
 
         Usa os dados estruturados diretamente (sem extrair via IA).
         A IA extrai apenas preferências, restrições e condições do texto.
+
+        Args:
+            usuario_id: ID do usuário autenticado. Se fornecido, a sessão
+                        é persistida no banco para histórico (SPEC-040).
         """
         request_id = str(uuid.uuid4())
         logger.info(
-            "[%s] Geracao via formulario | sexo=%s idade=%d peso=%.1f altura=%.0f atividade=%s",
+            "[%s] Geracao via formulario | sexo=%s idade=%d peso=%.1f altura=%.0f atividade=%s usuario=%s",
             request_id, sexo, idade, peso_kg, altura_cm, nivel_atividade,
+            usuario_id or "anon",
         )
 
         # Construir perfil com dados do formulário
@@ -101,7 +110,7 @@ class GerarPlanosUseCase:
         if not perfil.rotina.objetivo:
             perfil.rotina.objetivo = self._extractor._inferir_objetivo_por_imc(perfil)
 
-        return self._executar_fluxo(perfil, texto, request_id)
+        return self._executar_fluxo(perfil, texto, request_id, usuario_id=usuario_id)
 
     # ─── Modo texto livre (legado) ────────────────────
 
@@ -129,9 +138,13 @@ class GerarPlanosUseCase:
     # ═══════════════════════════════════════════════════════
 
     def _executar_fluxo(
-        self, perfil: PerfilExtraido, texto: str, request_id: str
+        self, perfil: PerfilExtraido, texto: str, request_id: str,
+        usuario_id: int | None = None,
     ) -> dict:
-        """Executa o fluxo comum: cálculo → restrições → geração → validação → PDF."""
+        """Executa o fluxo comum: cálculo → restrições → geração → validação → PDF.
+
+        Se usuario_id for fornecido, persiste a sessão no banco (SPEC-040).
+        """
 
         # Cálculo nutricional
         try:
@@ -181,6 +194,17 @@ class GerarPlanosUseCase:
 
         # PDF (degradável)
         pdf_url = self._gerar_pdf(planos, perfil, metas, request_id)
+
+        # Persistir sessão no banco se usuário autenticado (SPEC-040)
+        if usuario_id is not None:
+            self._persistir_sessao(
+                usuario_id=usuario_id,
+                perfil=perfil,
+                metas=metas,
+                planos=result.planos_corrigidos,
+                pdf_url=pdf_url,
+                request_id=request_id,
+            )
 
         # Resposta
         logger.info(
@@ -240,3 +264,66 @@ class GerarPlanosUseCase:
         except Exception as e:
             logger.error("[%s] Falha ao gerar PDF: %s", request_id, e)
             return None
+
+    # ═══════════════════════════════════════════════════════
+    # Persistência de sessão (SPEC-040)
+    # ═══════════════════════════════════════════════════════
+
+    def _persistir_sessao(
+        self,
+        usuario_id: int,
+        perfil: PerfilExtraido,
+        metas: MetasNutricionais,
+        planos: PlanosGerados,
+        pdf_url: str | None,
+        request_id: str,
+    ) -> None:
+        """Persiste a sessão de geração e planos no banco (RN-140, RN-141).
+
+        Degradável: se falhar, apenas loga — não interrompe o fluxo do usuário.
+        """
+        agora = datetime.now(timezone.utc)
+        objetivo = perfil.rotina.objetivo or "manutencao"
+
+        # Extrair uuid do nome do PDF (sem extensão)
+        pdf_uuid = None
+        data_expiracao = None
+        if pdf_url:
+            pdf_uuid = pdf_url.replace(".pdf", "")
+            data_expiracao = agora + timedelta(days=7)  # RN-131
+
+        try:
+            with SessionFactory() as session:
+                sessao = SessaoGeracao(
+                    usuario_id=usuario_id,
+                    data_geracao=agora,
+                    objetivo=objetivo,
+                    get_calorico=metas.get_calorico,
+                    tmb=metas.tmb,
+                    pdf_uuid=pdf_uuid,
+                    data_expiracao_pdf=data_expiracao,
+                )
+                session.add(sessao)
+                session.flush()  # Obter sessao.id
+
+                # Persistir cada plano
+                for i, plano in enumerate(planos.planos):
+                    plano_db = PlanoAlimentar(
+                        sessao_id=sessao.id,
+                        nome=plano.nome,
+                        eixo=plano.eixo,
+                        get_calorico=plano.calorias_estimadas,
+                        ordem=i + 1,
+                    )
+                    session.add(plano_db)
+
+                session.commit()
+                logger.info(
+                    "[%s] Sessao persistida | sessao_id=%d | usuario_id=%d | planos=%d",
+                    request_id, sessao.id, usuario_id, len(planos.planos),
+                )
+        except Exception as e:
+            logger.error(
+                "[%s] Falha ao persistir sessao no banco (degradavel): %s",
+                request_id, e,
+            )
