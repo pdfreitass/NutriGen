@@ -13,8 +13,6 @@ Features:
 import logging
 import time
 import threading
-from datetime import datetime, timezone
-from typing import Optional
 
 from fastapi import Request, HTTPException
 
@@ -148,8 +146,10 @@ def _get_auth_key(request: Request) -> str:
 # ─── Middleware ──────────────────────────────────────────
 
 async def rate_limit_middleware(request: Request):
-    """Middleware de rate limiting aplicado a POST /api/diet/generate."""
-    if request.url.path != "/api/diet/generate" or request.method != "POST":
+    """Middleware de rate limiting aplicado a POST /api/diet/generate e /generate-v2."""
+    if request.method != "POST":
+        return None
+    if request.url.path not in ("/api/diet/generate", "/api/diet/generate-v2"):
         return None
 
     ip = get_client_ip(request)

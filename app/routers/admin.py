@@ -10,7 +10,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Header, HTTPException
-from sqlalchemy import func, text
+from sqlalchemy import text
 
 from app.banco_dados import SessionFactory
 from app.models.database.evento_analytics import EventoAnalytics
