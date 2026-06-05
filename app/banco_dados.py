@@ -18,7 +18,7 @@ load_dotenv()
 _ODBC_STR = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
     "SERVER=localhost\\SQLEXPRESS;"
-    "DATABASE=diet_plan_generator;"
+    "DATABASE=nutrigen;"
     "Trusted_Connection=yes"
 )
 
@@ -55,7 +55,9 @@ def get_session() -> Session:
 
 def criar_tabelas():
     """Cria todas as tabelas definidas nos modelos (útil para desenvolvimento)."""
-    Base.metadata.create_all(engine)
+    # Garantir que todos os modelos estão registrados no Base.metadata
+    import app.models.database  # noqa: F401 — força import dos modelos
+    Base.metadata.create_all(engine, checkfirst=True)
 
 
 def fechar_conexao():
