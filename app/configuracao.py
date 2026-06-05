@@ -48,6 +48,17 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 RATE_LIMIT_ANON = int(os.getenv("RATE_LIMIT_ANON", "10"))
 RATE_LIMIT_AUTH = int(os.getenv("RATE_LIMIT_AUTH", "30"))
+RATE_LIMIT_HOUR_ANON = int(os.getenv("RATE_LIMIT_HOUR_ANON", "50"))
+RATE_LIMIT_HOUR_AUTH = int(os.getenv("RATE_LIMIT_HOUR_AUTH", "200"))
+
+# ─── Custos ─────────────────────────────────────────
+
+MAX_DAILY_COST_BRL = float(os.getenv("MAX_DAILY_COST_BRL", "50.00"))
+
+# ─── Segurança ──────────────────────────────────────
+
+_BANNED_RAW = os.getenv("BANNED_IPS", "")
+BANNED_IPS = [ip.strip() for ip in _BANNED_RAW.split(",") if ip.strip()]
 
 # ─── Aplicação ──────────────────────────────────────
 

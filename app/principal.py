@@ -9,11 +9,14 @@ from fastapi.responses import JSONResponse
 from app.banco_dados import criar_tabelas, fechar_conexao
 from app.routers.dieta import router as diet_router
 from app.routers.autenticacao import router as auth_router
+from app.routers.admin import router as admin_router
 from app.middleware.limite_taxa import rate_limit_middleware
 from app.middleware.id_requisicao import request_id_middleware
 from app.middleware.cabecalhos_seguranca import security_headers_middleware
 from app.configuracao import APP_ENV
 from app.configuracao_logs import setup_logging
+from app.infrastructure.cost_tracker import cost_tracker
+from app.configuracao import MAX_DAILY_COST_BRL
 
 # Configurar logging estruturado (SPEC-013)
 setup_logging()
@@ -24,6 +27,8 @@ async def lifespan(app: FastAPI):
     """Executa tarefas de inicialização e desligamento da aplicação."""
     # Startup: criar tabelas no banco de dados (chamada síncrona)
     criar_tabelas()
+    # Configurar limite de custo diário (SPEC-045)
+    cost_tracker.configurar_limite(MAX_DAILY_COST_BRL)
     yield
     # Shutdown: fechar conexão com o banco (chamada síncrona)
     fechar_conexao()
@@ -86,6 +91,7 @@ async def rate_limit_handler(request: Request, call_next):
 # Se um router for registrado depois do mount, seus endpoints nunca serão alcançados.
 app.include_router(auth_router)
 app.include_router(diet_router)
+app.include_router(admin_router)
 
 # Servir o frontend estático (HTML, CSS, JS) como SPA
 # html=True: qualquer rota não tratada pelos routers acima serve index.html

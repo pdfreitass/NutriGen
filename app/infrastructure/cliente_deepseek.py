@@ -37,6 +37,7 @@ from app.excecoes import (
     DeepSeekTimeoutError,
     DeepSeekUnavailableError,
 )
+from app.infrastructure.cost_tracker import cost_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -99,13 +100,20 @@ class DeepSeekClient:
         if max_tokens:
             payload["max_tokens"] = max_tokens
 
-        return self._request_with_retry(
+        result = self._request_with_retry(
             method="POST",
             url=url,
             headers=headers,
             payload=payload,
             timeout=timeout,
         )
+        # Registrar custo (SPEC-045)
+        usage = result.get("usage", {})
+        tokens_in = usage.get("prompt_tokens", 0)
+        tokens_out = usage.get("completion_tokens", 0)
+        if tokens_in or tokens_out:
+            cost_tracker.registrar_tokens(tokens_in, tokens_out)
+        return result
 
     # ─── Retry logic ──────────────────────────────
 

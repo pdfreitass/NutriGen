@@ -218,6 +218,18 @@ class GerarPlanosUseCase:
             request_id, len(planos.planos), pdf_url or "nao gerado",
         )
 
+        # Analytics: registrar evento plan_gerado (SPEC-043)
+        try:
+            from app.middleware.analytics import registrar_evento
+            for plano in result.planos_corrigidos.planos:
+                registrar_evento("plan_gerado", {
+                    "objetivo": perfil.rotina.objetivo,
+                    "eixo": plano.eixo,
+                    "calorias": plano.calorias_estimadas,
+                })
+        except Exception:
+            pass  # analytics é degradável
+
         return {
             "paciente": {
                 "sexo": perfil.perfil.sexo,
