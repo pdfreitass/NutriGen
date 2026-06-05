@@ -32,41 +32,13 @@ from app.models.esquemas import (
     PlanosGerados,
     RefeicaoGerada,
 )
+from app.utils.carregador_prompts import carregar_prompt_geracao
 
 logger = logging.getLogger(__name__)
 
-# ─── System Prompt de Geração (inglês — LL-007) ──────────
+# ─── System Prompt de Geração (carregado de arquivo — SPEC-044) ──────────
 
-_GENERATION_SYSTEM_PROMPT = """You are a professional nutritionist specialized in creating personalized meal plans. Generate EXACTLY 3 distinct meal plans for the user profile described below.
-
-CRITICAL RULES — VIOLATION MEANS REJECTION:
-
-1. Generate EXACTLY 3 plans. No more, no less.
-
-2. THE 3 PLANS MUST USE THESE FIXED THEMATIC AXES:
-   - Plan 1 — "Tradicional Brasileiro": Brazilian home-style cooking. Rice, beans, classic proteins (chicken, beef, eggs), simple salads. Affordable, familiar ingredients. AVOID quinoa, tofu, almond milk, peanut butter, whey protein.
-   - Plan 2 — "Funcional & Nutrientes": Nutrient-dense whole foods. Quinoa, sweet potato, nuts, varied vegetables, lean proteins. Focus on antioxidants and micronutrient variety. AVOID white rice, french bread, fatty red meat.
-   - Plan 3 — "Prático & Rápido": Quick-prep meals (< 15 min). Sandwiches, bowls, eggs, shakes, canned tuna. Ideal for busy routines. AVOID recipes requiring > 20 min of cooking or multiple pots.
-
-3. Plans MUST be structurally different. At least 40% of foods must differ between any two plans.
-
-4. RESTRICTIONS — ZERO TOLERANCE:
-   The user has dietary restrictions. NONE of the forbidden foods listed below may appear in ANY plan. Not even in trace amounts. Not even as substitutes. ZERO TOLERANCE.
-
-5. MACRO TARGETS:
-   Each plan's total macros should be within ±10% of the targets provided. Prioritize hitting protein and total calories.
-
-6. MEAL STRUCTURE PER PLAN:
-   - 4 to 6 meals: Breakfast, Lunch, Afternoon Snack, Dinner (add Morning Snack and/or Evening Snack if needed).
-   - 1 to 5 foods per meal.
-   - Quantities between 30g and 500g per food item.
-   - Include suggested times for each meal.
-
-7. FOOD DATABASE:
-   Use ONLY foods from the catalog provided below. DO NOT invent, suggest, or create any food not in this list. If the catalog does not have a food you want, choose the closest available alternative.
-
-8. RESPONSE FORMAT:
-   Return ONLY a valid JSON object with exactly the structure shown. No markdown, no code blocks, no extra text."""
+_GENERATION_SYSTEM_PROMPT = carregar_prompt_geracao()
 
 # ─── Template do User Prompt ─────────────────────────────
 

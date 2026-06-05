@@ -26,32 +26,13 @@ from app.excecoes import (
 )
 from app.infrastructure.cliente_deepseek import DeepSeekClient
 from app.models.esquemas import PerfilExtraido, Perfil, RotinaExtraida
+from app.utils.carregador_prompts import carregar_prompt_extracao
 
 logger = logging.getLogger(__name__)
 
-# ─── System Prompt de Extração (inglês — LL-007) ────
+# ─── System Prompt de Extração (carregado de arquivo — SPEC-044) ────
 
-_EXTRACTION_SYSTEM_PROMPT = """You are a nutritional information extractor. Convert the user's description into a structured JSON object with the fields below.
-
-Rules:
-1. Extract ONLY what is explicitly stated in the text. Do NOT invent values.
-2. If a required field (sexo, idade, peso_kg, altura_cm) is not in the text, set it to null.
-3. For 'nivel_atividade', classify as:
-   - "sedentario" (does not exercise or less than 2x/week)
-   - "moderado" (exercises 2-4x/week)
-   - "ativo" (exercises 5-7x/week)
-   If unclear, set to null.
-4. For 'objetivo', classify as:
-   - "perda_de_peso" (wants to lose weight, cut, get lean)
-   - "manutencao" (wants to maintain, health, well-being)
-   - "ganho_de_massa" (wants to gain weight, hypertrophy, bulk)
-   If unclear, set to null.
-5. Foods the user says they LIKE go in 'preferencias'.
-6. Foods the user says they DON'T EAT / HATE / ARE ALLERGIC TO go in 'restricoes'.
-7. Detect special conditions and mark in 'condicoes': "gravidez", "diabetes",
-   "hipertensao", "vegano", "vegetariano", "intolerancia_lactose", etc.
-8. Put any other relevant observations in 'extra'.
-9. Return ONLY valid JSON. No markdown, no code blocks, no extra text."""
+_EXTRACTION_SYSTEM_PROMPT = carregar_prompt_extracao()
 
 # Campos obrigatórios para prosseguir com a geração (RN-040)
 _CAMPOS_OBRIGATORIOS = ["sexo", "idade", "peso_kg", "altura_cm"]
