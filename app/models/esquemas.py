@@ -328,6 +328,9 @@ class DietGenerateResponseV2(BaseModel):
     planos: List[PlanoGerado] = Field(..., description="3 planos alimentares gerados")
     pdf_url: Optional[str] = Field(None, description="URL para download do PDF")
     request_id: str = Field(..., description="UUID da requisição para suporte")
+    sessao_id: Optional[int] = Field(
+        None, description="ID da sessão no banco (null se usuário anônimo)"
+    )
     avisos: List[str] = Field(
         default_factory=list,
         description="Avisos de segurança e recomendações (RN-070, RN-021, etc.)",
@@ -394,3 +397,47 @@ class HistoricoResponse(BaseModel):
     total: int = Field(..., description="Total de registros")
     page: int = Field(..., description="Página atual")
     pages: int = Field(..., description="Total de páginas")
+
+
+# ─── SPEC-041: Feedback de Planos ──────────────────
+
+_MOTIVOS_NEGATIVOS = [
+    "alimentos_repetidos",
+    "quantidades_irreais",
+    "combinacoes_ruins",
+    "alimentos_indesejados",
+    "outro",
+]
+
+
+class FeedbackRequest(BaseModel):
+    """Requisição de feedback sobre um plano gerado."""
+    sessao_id: Optional[int] = Field(
+        None, description="ID da sessão de geração (null se anônimo)"
+    )
+    plano_idx: int = Field(
+        ..., ge=0, le=2, description="Índice do plano (0, 1, 2)"
+    )
+    positivo: bool = Field(
+        ..., description="True = 👍 positivo, False = 👎 negativo"
+    )
+    motivo: Optional[str] = Field(
+        None,
+        description=f"Motivo da insatisfação. Opções: {_MOTIVOS_NEGATIVOS}",
+    )
+    comentario: Optional[str] = Field(
+        None, max_length=500, description="Comentário livre (opcional)"
+    )
+
+    @model_validator(mode="after")
+    def validate_motivo(self):
+        if self.motivo is not None and self.motivo not in _MOTIVOS_NEGATIVOS:
+            raise ValueError(
+                f"Motivo inválido. Opções: {_MOTIVOS_NEGATIVOS}"
+            )
+        return self
+
+
+class FeedbackResponse(BaseModel):
+    """Resposta ao envio de feedback."""
+    mensagem: str = Field(..., description="Mensagem de confirmação")

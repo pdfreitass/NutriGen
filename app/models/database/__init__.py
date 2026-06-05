@@ -3,5 +3,6 @@
 from app.models.database.usuario import Usuario
 from app.models.database.recuperacao_senha import RecuperacaoSenha
 from app.models.database.sessao_geracao import SessaoGeracao, PlanoAlimentar
+from app.models.database.feedback import Feedback
 
-__all__ = ["Usuario", "RecuperacaoSenha", "SessaoGeracao", "PlanoAlimentar"]
+__all__ = ["Usuario", "RecuperacaoSenha", "SessaoGeracao", "PlanoAlimentar", "Feedback"]

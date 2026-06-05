@@ -201,8 +201,9 @@ class GerarPlanosUseCase:
         pdf_url = self._gerar_pdf(planos, perfil, metas, request_id)
 
         # Persistir sessão no banco se usuário autenticado (SPEC-040)
+        sessao_id = None
         if usuario_id is not None:
-            self._persistir_sessao(
+            sessao_id = self._persistir_sessao(
                 usuario_id=usuario_id,
                 perfil=perfil,
                 metas=metas,
@@ -230,6 +231,7 @@ class GerarPlanosUseCase:
             "planos": result.planos_corrigidos.planos,
             "pdf_url": pdf_url,
             "request_id": request_id,
+            "sessao_id": sessao_id,
             "avisos": expanded.avisos,
             "severidade_restricoes": expanded.severidade,
         }
@@ -287,10 +289,13 @@ class GerarPlanosUseCase:
         planos: PlanosGerados,
         pdf_url: str | None,
         request_id: str,
-    ) -> None:
+    ) -> int | None:
         """Persiste a sessão de geração e planos no banco (RN-140, RN-141).
 
         Degradável: se falhar, apenas loga — não interrompe o fluxo do usuário.
+
+        Returns:
+            ID da sessão persistida, ou None se falhou.
         """
         agora = datetime.now(timezone.utc)
         objetivo = perfil.rotina.objetivo or "manutencao"
@@ -332,8 +337,10 @@ class GerarPlanosUseCase:
                     "[%s] Sessao persistida | sessao_id=%d | usuario_id=%d | planos=%d",
                     request_id, sessao.id, usuario_id, len(planos.planos),
                 )
+                return sessao.id
         except Exception as e:
             logger.error(
                 "[%s] Falha ao persistir sessao no banco (degradavel): %s",
                 request_id, e,
             )
+            return None

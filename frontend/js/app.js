@@ -633,8 +633,8 @@ function _buildPlanCard(plano, idx, isAccordion = false) {
                 📋 Copiar
             </button>
             <div class="plan-v2-feedback">
-                <button class="feedback-btn" title="Gostei!">👍</button>
-                <button class="feedback-btn" title="Não gostei">👎</button>
+                <button class="feedback-btn" title="Gostei!" onclick="_submitFeedback(${idx}, true)">👍</button>
+                <button class="feedback-btn" title="Não gostei" onclick="_submitFeedback(${idx}, false)">👎</button>
             </div>
         </div>
     `;
@@ -1388,4 +1388,91 @@ async function _regenerateDiet() {
     } catch (err) {
         _showToast('❌ ' + err.message, 5000);
     }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// SPEC-041 — Feedback de Planos
+// ═══════════════════════════════════════════════════════════
+
+const _MOTIVOS_LABELS = {
+    'alimentos_repetidos': 'Alimentos repetidos',
+    'quantidades_irreais': 'Quantidades irreais',
+    'combinacoes_ruins': 'Combinações ruins',
+    'alimentos_indesejados': 'Alimentos indesejados',
+    'outro': 'Outro',
+};
+
+async function _submitFeedback(planoIdx, positivo) {
+    const sessaoId = state.dietResult?.sessao_id || null;
+
+    if (!positivo) {
+        // Abrir mini-formulário com motivos
+        const motivo = await _showFeedbackForm();
+        if (motivo === null) return; // cancelado
+
+        try {
+            await apiRequest('POST', '/api/diet/feedback', {
+                sessao_id: sessaoId,
+                plano_idx: planoIdx,
+                positivo: false,
+                motivo: motivo,
+            });
+            _showToast('👎 Obrigado pelo feedback! Vamos melhorar.');
+        } catch (err) {
+            _showToast('❌ ' + err.message, 5000);
+        }
+    } else {
+        // 👍 positivo — envia direto
+        try {
+            await apiRequest('POST', '/api/diet/feedback', {
+                sessao_id: sessaoId,
+                plano_idx: planoIdx,
+                positivo: true,
+            });
+            _showToast('👍 Obrigado pelo feedback!');
+        } catch (err) {
+            _showToast('❌ ' + err.message, 5000);
+        }
+    }
+}
+
+function _showFeedbackForm() {
+    return new Promise((resolve) => {
+        // Remove existing modal
+        const existing = document.getElementById('feedback-modal');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'feedback-modal';
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-box feedback-modal">
+                <h3 class="modal-title">O que não gostou?</h3>
+                <div class="feedback-motivos">
+                    ${Object.entries(_MOTIVOS_LABELS).map(([key, label]) => `
+                        <button class="feedback-motivo-btn" data-motivo="${key}">${label}</button>
+                    `).join('')}
+                </div>
+                <button class="feedback-cancel-btn" data-motivo="">Cancelar</button>
+            </div>
+        `;
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                resolve(null);
+            }
+        });
+
+        overlay.querySelectorAll('.feedback-motivo-btn, .feedback-cancel-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const motivo = btn.dataset.motivo;
+                overlay.remove();
+                resolve(motivo || null);
+            });
+        });
+
+        document.body.appendChild(overlay);
+    });
 }

@@ -25,7 +25,11 @@ from app.excecoes import (
     PlanValidationError,
     ValorFisiologicoInvalidoError,
 )
-from app.models.esquemas import DietGenerateRequestV2, DietGenerateResponseV2
+from app.models.esquemas import (
+    DietGenerateRequestV2,
+    DietGenerateResponseV2,
+    FeedbackRequest,
+)
 from app.use_cases.gerar_planos import GerarPlanosUseCase
 from app.services.servico_autenticacao import verificar_token_jwt
 from app.infrastructure.repositorio_sessao import sessao_repo
@@ -284,3 +288,69 @@ def delete_sessao(
         raise HTTPException(status_code=404, detail="Sessão não encontrada.")
 
     return {"mensagem": "Sessão excluída com sucesso."}
+
+
+# ═══════════════════════════════════════════════════════════
+# POST /api/diet/feedback (SPEC-041)
+# ═══════════════════════════════════════════════════════════
+
+@router.post("/feedback", status_code=201)
+def submit_feedback(data: FeedbackRequest, request: Request):
+    """Registra feedback anônimo sobre um plano gerado.
+
+    Anti-spam (RN-147): 1 feedback por (sessao_id, plano_idx, ip_hash) a cada 24h.
+    Não requer autenticação (RN-146).
+    """
+    import hashlib
+    from datetime import datetime, timedelta, timezone
+
+    from app.banco_dados import SessionFactory
+    from app.models.database.feedback import Feedback
+
+    # Hash do IP para anti-spam (não armazenamos IP real)
+    client_ip = request.client.host if request.client else "unknown"
+    ip_hash = hashlib.sha256(f"nutrigen-{client_ip}".encode()).hexdigest()
+
+    # Verificar anti-spam: 1 feedback por (sessao_id, plano_idx, ip) em 24h
+    agora = datetime.now(timezone.utc)
+    limite = agora - timedelta(hours=24)
+
+    with SessionFactory() as session:
+        from sqlalchemy import and_
+        existing = session.query(Feedback).filter(
+            and_(
+                Feedback.plano_idx == data.plano_idx,
+                Feedback.ip_hash == ip_hash,
+                Feedback.criado_em >= limite,
+                # sessao_id match (both null or same value)
+                Feedback.sessao_id == data.sessao_id
+                if data.sessao_id is not None
+                else Feedback.sessao_id.is_(None),
+            )
+        ).first()
+
+        if existing:
+            raise HTTPException(
+                status_code=429,
+                detail="Você já avaliou este plano. Tente novamente em 24h.",
+            )
+
+        feedback = Feedback(
+            sessao_id=data.sessao_id,
+            plano_idx=data.plano_idx,
+            positivo=data.positivo,
+            motivo=data.motivo if not data.positivo else None,
+            comentario=data.comentario,
+            ip_hash=ip_hash,
+            criado_em=agora,
+        )
+        session.add(feedback)
+        session.commit()
+
+        if not data.positivo:
+            logger.info(
+                "Feedback negativo | sessao_id=%s | plano_idx=%d | motivo=%s",
+                data.sessao_id, data.plano_idx, data.motivo,
+            )
+
+    return {"mensagem": "Feedback registrado. Obrigado!"}
