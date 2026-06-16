@@ -1,0 +1,1478 @@
+/* =============================================
+   Diet Plan Generator - Frontend Application
+   ============================================= */
+
+// API base: usa caminho relativo pois o frontend é servido pelo próprio FastAPI
+const API_BASE = '';
+
+// ─── State ────────────────────────────────────
+const state = {
+    currentUser: null,       // { id, nome_completo, cpf, email, ... }
+    currentPage: 'login',
+    dietResult: null,        // DietGenerateResponse
+    // SPEC-042: Regeneration tracking
+    lastFormData: null,      // { sexo, idade, peso_kg, altura_cm, nivel_atividade, texto }
+    regenerationCount: 0,
+    regenerationStartTime: null,
+};
+
+// ─── DOM Cache ────────────────────────────────
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+const dom = {};
+let cepTimeout = null;
+
+function cacheDom() {
+
+    // Pages
+    dom.pageLogin = $('#page-login');
+    dom.pageRegister = $('#page-register');
+    dom.pageForgotPassword = $('#page-forgot-password');
+    dom.pageResetPassword = $('#page-reset-password');
+    dom.pageDiet = $('#page-diet');
+    dom.pageResults = $('#page-results');
+    dom.pageHistory = $('#page-history');
+
+    // Login form
+    dom.loginForm = $('#login-form');
+    dom.loginEmail = $('#login-email');
+    dom.loginSenha = $('#login-senha');
+    dom.loginError = $('#login-error');
+    dom.loginBtn = $('#login-btn');
+
+    // Register form
+    dom.registerForm = $('#register-form');
+    dom.regNome = $('#reg-nome');
+    dom.regCpf = $('#reg-cpf');
+    dom.regTelefone = $('#reg-telefone');
+    dom.regEmail = $('#reg-email');
+    dom.regCep = $('#reg-cep');
+    dom.regLogradouro = $('#reg-logradouro');
+    dom.regBairro = $('#reg-bairro');
+    dom.regCidade = $('#reg-cidade');
+    dom.regEstado = $('#reg-estado');
+    dom.regSenha = $('#reg-senha');
+    dom.regSenhaConfirm = $('#reg-senha-confirm');
+    dom.regError = $('#reg-error');
+    dom.regSuccess = $('#reg-success');
+    dom.regBtn = $('#reg-btn');
+    dom.regCepSpinner = $('#reg-cep-spinner');
+
+    // Forgot password form
+    dom.forgotForm = $('#forgot-form');
+    dom.forgotEmail = $('#forgot-email');
+    dom.forgotError = $('#forgot-error');
+    dom.forgotSuccess = $('#forgot-success');
+    dom.forgotBtn = $('#forgot-btn');
+
+    // Reset password form
+    dom.resetForm = $('#reset-form');
+    dom.resetToken = $('#reset-token');
+    dom.resetSenha = $('#reset-senha');
+    dom.resetSenhaConfirm = $('#reset-senha-confirm');
+    dom.resetError = $('#reset-error');
+    dom.resetSuccess = $('#reset-success');
+    dom.resetBtn = $('#reset-btn');
+
+    // Strength bars
+    dom.strengthBars = $$('.strength-bar');
+    dom.pwdReqs = $$('.password-requirements li');
+
+    // Diet form (SPEC-009: formulário + textarea)
+    dom.dietSexo = $('#diet-sexo');
+    dom.dietIdade = $('#diet-idade');
+    dom.dietPeso = $('#diet-peso');
+    dom.dietAltura = $('#diet-altura');
+    dom.dietAtividade = $('#diet-atividade');
+    dom.dietTextarea = $('#diet-texto');
+    dom.dietBtn = $('#diet-btn');
+    dom.dietError = $('#diet-error');
+    dom.dietRetryBtn = $('#diet-retry-btn');
+    dom.dietCharCounter = $('#diet-char-counter');
+    dom.exampleText = $('#diet-example-text');
+    dom.exampleBtn = $('#diet-example-btn');
+    dom.exampleDots = $('#diet-example-dots');
+
+    // Header
+    dom.headerUser = $('#header-user');
+    dom.headerUserName = $('#header-user-name');
+    dom.btnLogout = $('#btn-logout');
+
+    // Loading overlay
+    dom.loadingOverlay = $('#loading-overlay');
+    dom.loadingText = $('#loading-text');
+
+    // Results
+    dom.pageResults = $('#page-results');
+    dom.resultsContent = $('#results-content');
+    dom.btnNewDiet = $('#btn-new-diet');
+}
+
+// ─── Navigation ───────────────────────────────
+function showPage(pageName) {
+    // Hide all pages
+    ['login', 'register', 'forgot-password', 'reset-password', 'diet', 'results', 'history'].forEach(p => {
+        const key = 'page' + p.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+        const el = dom[key];
+        if (el) el.classList.add('hidden');
+    });
+
+    const pageMap = {
+        login: dom.pageLogin,
+        register: dom.pageRegister,
+        'forgot-password': dom.pageForgotPassword,
+        'reset-password': dom.pageResetPassword,
+        diet: dom.pageDiet,
+        results: dom.pageResults,
+        history: dom.pageHistory,
+    };
+
+    const target = pageMap[pageName];
+    if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('page-active');
+    }
+
+    state.currentPage = pageName;
+
+    // Start/stop example rotation on diet page
+    if (pageName === 'diet') {
+        startExampleRotation();
+    } else {
+        stopExampleRotation();
+    }
+
+    // Update header visibility
+    updateHeader();
+}
+
+function updateHeader() {
+    if (state.currentUser) {
+        dom.headerUser.classList.remove('hidden');
+        dom.headerUserName.textContent = state.currentUser.nome_completo.split(' ')[0];
+        const navHistory = document.getElementById('nav-history');
+        if (navHistory) navHistory.classList.remove('hidden');
+    } else {
+        dom.headerUser.classList.add('hidden');
+        const navHistory = document.getElementById('nav-history');
+        if (navHistory) navHistory.classList.add('hidden');
+    }
+}
+
+// ─── Loading ──────────────────────────────────
+function showLoading(text = 'Processando...') {
+    dom.loadingText.textContent = text;
+    dom.loadingOverlay.classList.remove('hidden');
+}
+
+function hideLoading() {
+    dom.loadingOverlay.classList.add('hidden');
+}
+
+// ─── Consecutive error tracking (SPEC-011) ──────
+let _consecutiveErrors = 0;
+
+// ─── API Helper (SPEC-011: 95s timeout) ─────────
+async function apiRequest(method, path, body = null) {
+    const url = `${API_BASE}${path}`;
+
+    // Create AbortController with 95s timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 95000);
+
+    const options = {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        signal: controller.signal,
+    };
+
+    if (body) {
+        options.body = JSON.stringify(body);
+    }
+
+    let response;
+    try {
+        response = await fetch(url, options);
+    } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+            throw new Error('Tempo limite excedido. Tente um texto mais curto ou tente novamente.');
+        }
+        throw new Error('Sem conexão com o servidor. Verifique sua rede.');
+    }
+
+    clearTimeout(timeoutId);
+
+    // Extract request_id from response header
+    const requestId = response.headers.get('X-Request-ID') || '';
+
+    // Try to parse JSON
+    let data;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        try {
+            data = await response.json();
+        } catch (_parseError) {
+            _consecutiveErrors++;
+            throw new Error(`Resposta inválida do servidor. Nossa equipe foi notificada.${_getConsecutiveHint()}`);
+        }
+    } else {
+        _consecutiveErrors++;
+        const text = await response.text().catch(() => '');
+        throw new Error(
+            text
+                ? `Erro do servidor: ${text.substring(0, 200)}${_getConsecutiveHint()}`
+                : `Erro do servidor (status ${response.status}).${_getConsecutiveHint()}`
+        );
+    }
+
+    if (!response.ok) {
+        _consecutiveErrors++;
+        // Map HTTP status to user-friendly message
+        const detail = _getHttpErrorMessage(response.status, data, requestId);
+        throw new Error(detail);
+    }
+
+    // Reset consecutive errors on success
+    _consecutiveErrors = 0;
+    return data;
+}
+
+function _getHttpErrorMessage(status, data, requestId) {
+    // Use server detail if it exists and is user-friendly
+    const serverMsg = data?.detail || data?.message || '';
+
+    // Pydantic validation errors come as array
+    if (Array.isArray(serverMsg)) {
+        const msgs = serverMsg.map(e => e.msg || e.message).join('; ');
+        return msgs;
+    }
+
+    // If server already returned a good user-friendly message, use it
+    if (serverMsg && serverMsg.length > 10 && !serverMsg.startsWith('{')) {
+        return serverMsg;
+    }
+
+    // Otherwise, map status to our messages
+    const messages = {
+        400: 'Verifique os dados informados e tente novamente.',
+        401: 'Sessão expirada. Faça login novamente.',
+        404: 'Recurso não encontrado.',
+        422: 'Dados inválidos. Verifique as informações enviadas.',
+        429: 'Muitas requisições. Aguarde alguns segundos antes de tentar novamente.',
+        500: 'Erro interno. Nossa equipe foi notificada. Tente novamente.',
+        502: 'Não foi possível gerar planos válidos. Tente descrever sua rotina com outras palavras.',
+        503: 'Nossa IA está temporariamente indisponível. Tente novamente em alguns minutos.',
+        504: 'Tempo limite excedido. Tente um texto mais curto.',
+    };
+    const baseMsg = messages[status] || `Erro inesperado (${status}). Tente novamente.`;
+    const idSuffix = requestId ? ` [ID: ${requestId.slice(0, 8)}]` : '';
+    return baseMsg + idSuffix + _getConsecutiveHint();
+}
+
+function _getConsecutiveHint() {
+    if (_consecutiveErrors >= 3) {
+        return ' Estamos enfrentando instabilidade. Tente novamente mais tarde.';
+    }
+    return '';
+}
+
+// ─── Auth: Login ──────────────────────────────
+function showLoginError(msg) {
+    dom.loginError.querySelector('.alert-text').textContent = msg;
+    dom.loginError.classList.remove('hidden');
+}
+
+// ─── Auth: Register ────────────────────────────
+function showRegError(msg) {
+    dom.regError.querySelector('.alert-text').textContent = msg;
+    dom.regError.classList.remove('hidden');
+}
+
+// ─── Password Strength ────────────────────────
+function updatePasswordStrength(pwd) {
+    const reqs = {
+        length: pwd.length >= 8,
+        upper: /[A-Z]/.test(pwd),
+        number: /[0-9]/.test(pwd),
+        special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pwd),
+    };
+
+    const items = ['req-length', 'req-upper', 'req-number', 'req-special'];
+    items.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const key = id.replace('req-', '');
+        if (reqs[key]) {
+            el.classList.add('met');
+        } else {
+            el.classList.remove('met');
+        }
+    });
+
+    const metCount = Object.values(reqs).filter(Boolean).length;
+    const bars = dom.strengthBars;
+
+    bars.forEach((bar, i) => {
+        bar.className = 'strength-bar';
+        if (i < metCount) {
+            if (metCount <= 2) bar.classList.add('weak');
+            else if (metCount === 3) bar.classList.add('medium');
+            else bar.classList.add('strong');
+        }
+    });
+}
+
+// ─── Field Error Helpers ──────────────────────
+function showFieldError(input, msg) {
+    input.classList.add('error');
+    const parent = input.closest('.form-group');
+    if (parent) {
+        const errorEl = parent.querySelector('.form-error');
+        if (errorEl) errorEl.textContent = msg;
+    }
+}
+
+function clearFieldError(input) {
+    input.classList.remove('error');
+    const parent = input.closest('.form-group');
+    if (parent) {
+        const errorEl = parent.querySelector('.form-error');
+        if (errorEl) errorEl.textContent = '';
+    }
+}
+
+// ─── ViaCEP Address Lookup ────────────────────
+async function fetchAddress(cep) {
+    dom.regCepSpinner.classList.add('active');
+    dom.regCep.classList.add('success');
+
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (data.erro) {
+            dom.regCep.classList.remove('success');
+            dom.regCep.classList.add('error');
+            dom.regLogradouro.value = '';
+            dom.regBairro.value = '';
+            dom.regCidade.value = '';
+            dom.regEstado.value = '';
+            showFieldError(dom.regCep, 'CEP não encontrado');
+            return;
+        }
+
+        dom.regLogradouro.value = data.logradouro || '';
+        dom.regBairro.value = data.bairro || '';
+        dom.regCidade.value = data.localidade || '';
+        dom.regEstado.value = data.uf || '';
+        dom.regCep.classList.remove('error');
+        dom.regCep.classList.add('success');
+        clearFieldError(dom.regCep);
+    } catch (err) {
+        dom.regCep.classList.remove('success');
+        showFieldError(dom.regCep, 'Erro ao buscar CEP');
+    } finally {
+        dom.regCepSpinner.classList.remove('active');
+    }
+}
+
+// ─── Diet Generation ──────────────────────────
+
+// Add routine dynamically (3rd routine with different defaults)
+function initializeRoutines() {
+    // Set default values for the 3 routines
+    const defaultRoutines = [
+        { nome: 'Low Carb', atividade: 'sedentario', objetivo: 'perda_de_peso', alimentos: 'frango, ovos, brócolis, espinafre, abacate' },
+        { nome: 'Balanceada', atividade: 'moderado', objetivo: 'manutencao', alimentos: 'arroz integral, frango, feijão, salada, banana' },
+        { nome: 'High Protein', atividade: 'ativo', objetivo: 'ganho_de_massa', alimentos: 'frango, batata doce, ovos, aveia, whey protein' },
+    ];
+
+    dom.routineNome.forEach((input, i) => {
+        if (defaultRoutines[i]) {
+            input.value = defaultRoutines[i].nome;
+        }
+    });
+
+    dom.routineAtividade.forEach((select, i) => {
+        if (defaultRoutines[i]) {
+            select.value = defaultRoutines[i].atividade;
+        }
+    });
+
+    dom.routineObjetivo.forEach((select, i) => {
+        if (defaultRoutines[i]) {
+            select.value = defaultRoutines[i].objetivo;
+        }
+    });
+
+    dom.routineAlimentos.forEach((input, i) => {
+        if (defaultRoutines[i]) {
+            input.value = defaultRoutines[i].alimentos;
+        }
+    });
+}
+
+function showDietError(msg) {
+    dom.dietError.querySelector('.alert-text').textContent = msg;
+    dom.dietError.classList.remove('hidden');
+    // Show retry button only for 5xx/server errors
+    const isServerError = /502|503|504|500|Erro interno|indisponível|tempo limite/i.test(msg);
+    if (dom.dietRetryBtn) {
+        dom.dietRetryBtn.classList.toggle('hidden', !isServerError);
+    }
+}
+
+// ─── Results Rendering (SPEC-010) ──────────────
+function renderResults(result) {
+    dom.resultsContent.innerHTML = '';
+
+    // ═══ Summary Section ═══
+    const p = result.paciente;
+    const summary = document.createElement('div');
+    summary.className = 'result-summary';
+    summary.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-value">${result.tmb.toFixed(0)}</div>
+            <div class="stat-label">TMB (kcal/dia)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${result.get_calorico.toFixed(0)}</div>
+            <div class="stat-label">GET (kcal/dia)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${_getObjetivoLabel(result.objetivo)}</div>
+            <div class="stat-label">Objetivo</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${(p.peso_kg || 0).toFixed(1)} kg</div>
+            <div class="stat-label">Peso</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${(p.altura_cm || 0).toFixed(0)} cm</div>
+            <div class="stat-label">Altura</div>
+        </div>
+    `;
+    dom.resultsContent.appendChild(summary);
+
+    // ═══ Plans Grid ═══
+    const plansGrid = document.createElement('div');
+    plansGrid.className = 'plans-grid';
+
+    result.planos.forEach((plano, idx) => {
+        const card = _buildPlanCard(plano, idx);
+        plansGrid.appendChild(card);
+    });
+
+    dom.resultsContent.appendChild(plansGrid);
+
+    // ═══ Accordion (mobile) ═══
+    const accordion = document.createElement('div');
+    accordion.className = 'plans-accordion';
+
+    const tabNames = ['Tradicional', 'Funcional', 'Prático'];
+    const tabIcons = ['🍛', '🥗', '⏱️'];
+
+    // Tabs
+    const tabs = document.createElement('div');
+    tabs.className = 'accordion-tabs';
+    tabNames.forEach((name, i) => {
+        const tab = document.createElement('button');
+        tab.className = 'accordion-tab' + (i === 0 ? ' active' : '');
+        tab.textContent = `${tabIcons[i]} ${name}`;
+        tab.dataset.tab = i;
+        tab.addEventListener('click', () => _switchAccordionTab(i));
+        tabs.appendChild(tab);
+    });
+    accordion.appendChild(tabs);
+
+    // Panels
+    result.planos.forEach((plano, idx) => {
+        const panel = document.createElement('div');
+        panel.className = 'accordion-panel' + (idx === 0 ? ' active' : '');
+        panel.dataset.panel = idx;
+        const card = _buildPlanCard(plano, idx, true);
+        panel.appendChild(card);
+        accordion.appendChild(panel);
+    });
+
+    dom.resultsContent.appendChild(accordion);
+
+    // ═══ Avisos (SPEC-008) ═══
+    if (result.avisos && result.avisos.length > 0) {
+        const avisosSection = document.createElement('div');
+        avisosSection.className = 'avisos-section';
+        avisosSection.innerHTML = `
+            <h3 class="avisos-title">⚠️ Avisos Importantes</h3>
+            <ul class="avisos-list">
+                ${result.avisos.map(a => `<li>${a}</li>`).join('')}
+            </ul>
+        `;
+        dom.resultsContent.appendChild(avisosSection);
+    }
+
+    // ═══ Global Actions ═══
+    const actions = document.createElement('div');
+    actions.className = 'results-actions';
+    actions.innerHTML = `
+        <button class="btn btn-secondary" onclick="_regenerateDiet()">
+            🔄 Gerar Novamente
+        </button>
+    `;
+    if (result.pdf_url) {
+        actions.innerHTML += `
+            <a href="${API_BASE}${result.pdf_url}" target="_blank" class="btn btn-success">
+                📄 Baixar PDF Completo
+            </a>
+        `;
+    }
+    dom.resultsContent.appendChild(actions);
+
+    // ═══ Disclaimer (RN-070) ═══
+    const disclaimer = document.createElement('p');
+    disclaimer.className = 'results-disclaimer';
+    disclaimer.textContent = '⚠️ Este plano alimentar é gerado por inteligência artificial e tem caráter informativo. Não substitui consulta com nutricionista ou médico.';
+    dom.resultsContent.appendChild(disclaimer);
+
+    hideLoading();
+}
+
+function _buildPlanCard(plano, idx, isAccordion = false) {
+    const card = document.createElement('div');
+    card.className = 'plan-card-v2';
+
+    // Compute totals
+    let totalProt = 0, totalCarbo = 0, totalGord = 0, totalKcal = 0;
+    plano.refeicoes.forEach(ref => {
+        ref.alimentos.forEach(a => {
+            totalProt += a.proteina_g || 0;
+            totalCarbo += a.carboidrato_g || 0;
+            totalGord += a.gordura_g || 0;
+            totalKcal += a.calorias_kcal || 0;
+        });
+    });
+
+    const eixoLabels = {
+        tradicional: 'Tradicional Brasileiro',
+        funcional: 'Funcional & Nutrientes',
+        pratico: 'Prático & Rápido',
+    };
+    const eixoIcons = {
+        tradicional: '🍛',
+        funcional: '🥗',
+        pratico: '⏱️',
+    };
+
+    card.innerHTML = `
+        <div class="plan-v2-header">
+            <span class="plan-v2-badge">${eixoIcons[plano.eixo] || '📋'} ${eixoLabels[plano.eixo] || plano.eixo}</span>
+            <h3 class="plan-v2-name">${plano.nome}</h3>
+            <p class="plan-v2-desc">${plano.descricao || ''}</p>
+        </div>
+
+        <div class="plan-v2-macros">
+            <div class="macro-card">
+                <div class="macro-card-value">${totalProt.toFixed(0)}g</div>
+                <div class="macro-card-label">Proteína</div>
+            </div>
+            <div class="macro-card">
+                <div class="macro-card-value">${totalCarbo.toFixed(0)}g</div>
+                <div class="macro-card-label">Carboidrato</div>
+            </div>
+            <div class="macro-card">
+                <div class="macro-card-value">${totalGord.toFixed(0)}g</div>
+                <div class="macro-card-label">Gordura</div>
+            </div>
+            <div class="macro-card macro-card-kcal">
+                <div class="macro-card-value">${totalKcal.toFixed(0)}</div>
+                <div class="macro-card-label">kcal totais</div>
+            </div>
+        </div>
+
+        <div class="plan-v2-meals">
+            ${plano.refeicoes.map(ref => `
+                <div class="meal-v2">
+                    <div class="meal-v2-title">
+                        ${ref.nome}
+                        ${ref.horario ? `<span class="meal-v2-time">${ref.horario}</span>` : ''}
+                    </div>
+                    <table class="meal-v2-table">
+                        <thead>
+                            <tr>
+                                <th>Alimento</th>
+                                <th>g</th>
+                                <th>P</th>
+                                <th>C</th>
+                                <th>G</th>
+                                <th>kcal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ref.alimentos.map(a => `
+                                <tr>
+                                    <td>${a.nome}</td>
+                                    <td>${(a.quantidade_g || 0).toFixed(0)}</td>
+                                    <td>${(a.proteina_g || 0).toFixed(1)}</td>
+                                    <td>${(a.carboidrato_g || 0).toFixed(1)}</td>
+                                    <td>${(a.gordura_g || 0).toFixed(1)}</td>
+                                    <td>${(a.calorias_kcal || 0).toFixed(0)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `).join('')}
+        </div>
+
+        <div class="plan-v2-actions">
+            <button class="btn btn-sm btn-outline" onclick="_copyPlanToClipboard(this)" data-plan-idx="${idx}">
+                📋 Copiar
+            </button>
+            <div class="plan-v2-feedback">
+                <button class="feedback-btn" title="Gostei!" onclick="_submitFeedback(${idx}, true)">👍</button>
+                <button class="feedback-btn" title="Não gostei" onclick="_submitFeedback(${idx}, false)">👎</button>
+            </div>
+        </div>
+    `;
+
+    return card;
+}
+
+function _switchAccordionTab(index) {
+    document.querySelectorAll('.accordion-tab').forEach((t, i) => {
+        t.classList.toggle('active', i === index);
+    });
+    document.querySelectorAll('.accordion-panel').forEach((p, i) => {
+        p.classList.toggle('active', i === index);
+    });
+}
+
+function _getObjetivoLabel(obj) {
+    const map = {
+        'perda_de_peso': '📉 Perda',
+        'manutencao': '⚖️ Manutenção',
+        'ganho_de_massa': '💪 Ganho',
+    };
+    return map[obj] || obj || '—';
+}
+
+// Clipboard copy (SPEC-010)
+function _copyPlanToClipboard(btn) {
+    const card = btn.closest('.plan-card-v2');
+    if (!card) return;
+
+    // Extract text from the card
+    const text = card.innerText.trim();
+    navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = '✅ Copiado!';
+        setTimeout(() => { btn.textContent = original; }, 2000);
+    }).catch(() => {
+        // Fallback para navegadores sem clipboard API
+        btn.textContent = '❌ Erro';
+        setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000);
+    });
+}
+
+// ─── Alert helper ─────────────────────────────
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 1000; max-width: 400px; box-shadow: var(--shadow-lg); animation: fadeIn 0.3s ease;';
+    const icons = { success: '✅', error: '❌', warning: '⚠️' };
+    alertDiv.innerHTML = `
+        <span class="alert-icon">${icons[type] || 'ℹ️'}</span>
+        <span class="alert-text">${message}</span>
+    `;
+    document.body.appendChild(alertDiv);
+
+    setTimeout(() => {
+        alertDiv.style.opacity = '0';
+        alertDiv.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 4000);
+}
+
+// ─── Logout ───────────────────────────────────
+function logout() {
+    state.currentUser = null;
+    state.dietResult = null;
+    showPage('login');
+    dom.loginForm.reset();
+    dom.loginError.classList.add('hidden');
+    showAlert('success', 'Logout realizado com sucesso!');
+}
+
+// ─── CPF formatting helper ────────────────────
+function formatCPF(val) {
+    val = val.replace(/\D/g, '');
+    if (val.length > 11) val = val.slice(0, 11);
+    if (val.length > 9) {
+        val = val.slice(0, 3) + '.' + val.slice(3, 6) + '.' + val.slice(6, 9) + '-' + val.slice(9);
+    } else if (val.length > 6) {
+        val = val.slice(0, 3) + '.' + val.slice(3, 6) + '.' + val.slice(6);
+    } else if (val.length > 3) {
+        val = val.slice(0, 3) + '.' + val.slice(3);
+    }
+    return val;
+}
+
+// ─── Telefone formatting helper ───────────────
+function formatTelefone(val) {
+    val = val.replace(/\D/g, '');
+    if (val.length > 11) val = val.slice(0, 11);
+    if (val.length > 7) {
+        val = '(' + val.slice(0, 2) + ') ' + val.slice(2, 7) + '-' + val.slice(7);
+    } else if (val.length > 2) {
+        val = '(' + val.slice(0, 2) + ') ' + val.slice(2);
+    } else if (val.length > 0) {
+        val = '(' + val;
+    }
+    return val;
+}
+
+// ─── Initialize ───────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    cacheDom();
+
+    // ── Login Form ──
+    dom.loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        dom.loginError.classList.add('hidden');
+
+        const email = dom.loginEmail.value.trim();
+        const senha = dom.loginSenha.value;
+
+        if (!email || !senha) {
+            showLoginError('Preencha todos os campos.');
+            return;
+        }
+
+        dom.loginBtn.classList.add('loading');
+
+        try {
+            const data = await apiRequest('POST', '/api/auth/login', { email, senha });
+            state.currentUser = data.usuario;
+            showPage('diet');
+            dom.loginForm.reset();
+            dom.loginError.classList.add('hidden');
+            showAlert('success', 'Login realizado com sucesso!');
+        } catch (err) {
+            showLoginError(err.message);
+        } finally {
+            dom.loginBtn.classList.remove('loading');
+        }
+    });
+
+    // ── CPF formatting ──
+    dom.regCpf.addEventListener('input', (e) => {
+        e.target.value = formatCPF(e.target.value);
+    });
+
+    // ── Telefone formatting ──
+    dom.regTelefone.addEventListener('input', (e) => {
+        e.target.value = formatTelefone(e.target.value);
+    });
+
+    // ── CEP auto fetch ──
+    dom.regCep.addEventListener('input', (e) => {
+        let val = e.target.value.replace(/\D/g, '');
+        if (val.length > 8) val = val.slice(0, 8);
+        e.target.value = val;
+
+        clearTimeout(cepTimeout);
+
+        if (val.length === 8) {
+            cepTimeout = setTimeout(() => fetchAddress(val), 500);
+        } else {
+            if (val.length === 0) {
+                dom.regLogradouro.value = '';
+                dom.regBairro.value = '';
+                dom.regCidade.value = '';
+                dom.regEstado.value = '';
+            }
+        }
+    });
+
+    // ── Password strength ──
+    dom.regSenha.addEventListener('input', (e) => {
+        updatePasswordStrength(e.target.value);
+    });
+
+    // ── Register Form ──
+    dom.registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        dom.regError.classList.add('hidden');
+        dom.regSuccess.classList.add('hidden');
+
+        const nome = dom.regNome.value.trim();
+        const cpf = dom.regCpf.value.replace(/\D/g, '');
+        const telefone = dom.regTelefone.value.replace(/\D/g, '');
+        const email = dom.regEmail.value.trim();
+        const cep = dom.regCep.value.trim();
+        const senha = dom.regSenha.value;
+        const senhaConfirm = dom.regSenhaConfirm.value;
+
+        if (!nome || !cpf || !telefone || !email || !cep || !senha || !senhaConfirm) {
+            showRegError('Preencha todos os campos.');
+            return;
+        }
+
+        if (cpf.length !== 11) {
+            showRegError('CPF deve ter 11 dígitos.');
+            return;
+        }
+
+        if (senha !== senhaConfirm) {
+            showRegError('As senhas não conferem.');
+            return;
+        }
+
+        if (cep.length !== 8) {
+            showRegError('CEP deve ter 8 dígitos.');
+            return;
+        }
+
+        dom.regBtn.classList.add('loading');
+
+        try {
+            const data = await apiRequest('POST', '/api/auth/register', {
+                nome_completo: nome,
+                cpf,
+                telefone,
+                email,
+                cep,
+                senha,
+            });
+
+            dom.regSuccess.classList.remove('hidden');
+            dom.regSuccess.querySelector('.alert-text').textContent =
+                `Cadastro realizado com sucesso! Bem-vindo(a), ${data.nome_completo.split(' ')[0]}!`;
+
+            dom.registerForm.reset();
+            dom.strengthBars.forEach(b => b.className = 'strength-bar');
+            document.querySelectorAll('.password-requirements li').forEach(el => el.classList.remove('met'));
+
+            setTimeout(() => {
+                dom.regSuccess.classList.add('hidden');
+                showPage('login');
+                dom.loginEmail.value = email;
+                dom.loginSenha.value = '';
+            }, 2000);
+        } catch (err) {
+            showRegError(err.message);
+        } finally {
+            dom.regBtn.classList.remove('loading');
+        }
+    });
+
+    // ── Forgot Password Form ──
+    dom.forgotForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        dom.forgotError.classList.add('hidden');
+        dom.forgotSuccess.classList.add('hidden');
+
+        const email = dom.forgotEmail.value.trim();
+
+        if (!email) {
+            dom.forgotError.querySelector('.alert-text').textContent = 'Digite seu e-mail.';
+            dom.forgotError.classList.remove('hidden');
+            return;
+        }
+
+        dom.forgotBtn.classList.add('loading');
+
+        try {
+            const data = await apiRequest('POST', '/api/auth/forgot-password', { email });
+
+            // Mostrar o token na mensagem de sucesso (desenvolvimento)
+            const successMsg = data.token
+                ? `Token gerado! Copie o token abaixo para redefinir sua senha:\n\n${data.token}`
+                : data.mensagem;
+
+            dom.forgotSuccess.querySelector('.alert-text').textContent = successMsg;
+            dom.forgotSuccess.classList.remove('hidden');
+
+            // Se tiver token, limpa o form e mostra link para reset
+            if (data.token) {
+                dom.forgotEmail.value = '';
+                // Remove link antigo se existir para evitar duplicatas
+                const oldLink = dom.forgotSuccess.querySelector('.reset-nav-link');
+                if (oldLink) oldLink.remove();
+                // Adiciona botão para ir para a página de reset
+                const resetLink = document.createElement('div');
+                resetLink.className = 'reset-nav-link';
+                resetLink.style.marginTop = '1rem';
+                resetLink.innerHTML = '<a href="#" data-page="reset-password" class="btn btn-secondary btn-block" style="text-decoration:none;display:block;text-align:center;">Ir para Redefinir Senha</a>';
+                dom.forgotSuccess.appendChild(resetLink);
+            }
+        } catch (err) {
+            dom.forgotError.querySelector('.alert-text').textContent = err.message;
+            dom.forgotError.classList.remove('hidden');
+        } finally {
+            dom.forgotBtn.classList.remove('loading');
+        }
+    });
+
+    // ── Reset Password Form ──
+    dom.resetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        dom.resetError.classList.add('hidden');
+        dom.resetSuccess.classList.add('hidden');
+
+        const token = dom.resetToken.value.trim();
+        const novaSenha = dom.resetSenha.value;
+        const novaSenhaConfirm = dom.resetSenhaConfirm.value;
+
+        if (!token || !novaSenha || !novaSenhaConfirm) {
+            dom.resetError.querySelector('.alert-text').textContent = 'Preencha todos os campos.';
+            dom.resetError.classList.remove('hidden');
+            return;
+        }
+
+        if (novaSenha !== novaSenhaConfirm) {
+            dom.resetError.querySelector('.alert-text').textContent = 'As senhas não conferem.';
+            dom.resetError.classList.remove('hidden');
+            return;
+        }
+
+        if (novaSenha.length < 8) {
+            dom.resetError.querySelector('.alert-text').textContent = 'A senha deve ter no mínimo 8 caracteres.';
+            dom.resetError.classList.remove('hidden');
+            return;
+        }
+
+        dom.resetBtn.classList.add('loading');
+
+        try {
+            const data = await apiRequest('POST', '/api/auth/reset-password', {
+                token,
+                nova_senha: novaSenha,
+            });
+
+            dom.resetSuccess.querySelector('.alert-text').textContent = data.mensagem;
+            dom.resetSuccess.classList.remove('hidden');
+            dom.resetForm.reset();
+
+            // Redirecionar para o login após 2.5s
+            setTimeout(() => {
+                dom.resetSuccess.classList.add('hidden');
+                showPage('login');
+                showAlert('success', 'Senha redefinida! Faça login com sua nova senha.');
+            }, 2500);
+        } catch (err) {
+            dom.resetError.querySelector('.alert-text').textContent = err.message;
+            dom.resetError.classList.remove('hidden');
+        } finally {
+            dom.resetBtn.classList.remove('loading');
+        }
+    });
+
+    // ── Diet Form + Examples ──
+
+    // Exemplos rotativos (apenas rotina, dados vêm do formulário)
+    const DIET_EXAMPLES = [
+        'Trabalho sentado o dia todo, faço musculação 4x por semana. Quero ganhar massa. Gosto de frango, batata doce, ovo e banana. Não como peixe.',
+        'Sou vegetariano, corro 3x por semana, quero perder uns quilinhos. Adoro salada, grão de bico, tofu e frutas.',
+        'Cuido da casa e das crianças, não sobra tempo pra academia. Quero só me alimentar melhor. Gosto de arroz, feijão, carne moída e legumes.',
+        'Sou estagiário, almoço no bandejão, janto em casa. Quero definição. Curto frango grelhado, whey, aveia e pasta de amendoim.',
+        'Estou grávida de 5 meses, meu médico pediu pra eu me alimentar melhor. Gosto de frutas, iogurte, peixe e legumes.',
+    ];
+
+    let _exampleIndex = 0;
+    let _exampleTimer = null;
+
+    function startExampleRotation() {
+        _exampleIndex = 0;
+        _showExample(0);
+        _renderExampleDots();
+        _exampleTimer = setInterval(() => {
+            _exampleIndex = (_exampleIndex + 1) % DIET_EXAMPLES.length;
+            _showExample(_exampleIndex);
+        }, 5000);
+    }
+
+    function stopExampleRotation() {
+        if (_exampleTimer) {
+            clearInterval(_exampleTimer);
+            _exampleTimer = null;
+        }
+    }
+
+    function _showExample(index) {
+        if (!dom.exampleText || !dom.exampleDots) return;
+        dom.exampleText.textContent = DIET_EXAMPLES[index];
+        const dots = dom.exampleDots.querySelectorAll('.diet-example-dot');
+        dots.forEach((d, i) => {
+            d.classList.toggle('active', i === index);
+        });
+    }
+
+    function _renderExampleDots() {
+        if (!dom.exampleDots) return;
+        dom.exampleDots.innerHTML = DIET_EXAMPLES.map((_, i) =>
+            `<span class="diet-example-dot${i === 0 ? ' active' : ''}" data-index="${i}"></span>`
+        ).join('');
+        dom.exampleDots.querySelectorAll('.diet-example-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                const idx = parseInt(dot.dataset.index);
+                _exampleIndex = idx;
+                _showExample(idx);
+                // Reiniciar timer
+                stopExampleRotation();
+                _exampleTimer = setInterval(() => {
+                    _exampleIndex = (_exampleIndex + 1) % DIET_EXAMPLES.length;
+                    _showExample(_exampleIndex);
+                }, 5000);
+            });
+        });
+    }
+
+    // Botão "Usar este exemplo"
+    if (dom.exampleBtn) {
+        dom.exampleBtn.addEventListener('click', () => {
+            dom.dietTextarea.value = DIET_EXAMPLES[_exampleIndex];
+            _updateCharCounter();
+        });
+    }
+
+    // Contador de caracteres + validação do formulário
+    function _updateCharCounter() {
+        const len = dom.dietTextarea.value.length;
+        dom.dietCharCounter.textContent = `${len}/1500`;
+        dom.dietCharCounter.classList.remove('valid', 'invalid');
+        _validateForm();
+    }
+
+    function _validateForm() {
+        const sexo = dom.dietSexo?.value;
+        const idade = dom.dietIdade?.value;
+        const peso = dom.dietPeso?.value;
+        const altura = dom.dietAltura?.value;
+        const atividade = dom.dietAtividade?.value;
+        const texto = dom.dietTextarea?.value.trim();
+
+        const formOk = sexo && idade && peso && altura && atividade;
+        const textoOk = texto.length >= 10;
+
+        dom.dietBtn.disabled = !(formOk && textoOk);
+        dom.dietCharCounter.classList.add(textoOk ? 'valid' : 'invalid');
+    }
+
+    if (dom.dietTextarea) {
+        dom.dietTextarea.addEventListener('input', _updateCharCounter);
+    }
+    // Validar formulário ao alterar qualquer campo
+    [dom.dietSexo, dom.dietIdade, dom.dietPeso, dom.dietAltura, dom.dietAtividade].forEach(el => {
+        if (el) el.addEventListener('change', _validateForm);
+        if (el && el.tagName === 'INPUT') el.addEventListener('input', _validateForm);
+    });
+
+    // Handler do botão Gerar Planos
+    if (dom.dietBtn) {
+        dom.dietBtn.addEventListener('click', async () => {
+            const sexo = dom.dietSexo.value;
+            const idade = parseInt(dom.dietIdade.value);
+            const peso_kg = parseFloat(dom.dietPeso.value);
+            const altura_cm = parseFloat(dom.dietAltura.value);
+            const nivel_atividade = dom.dietAtividade.value;
+            const texto = dom.dietTextarea.value.trim();
+
+            if (!sexo || !idade || !peso_kg || !altura_cm || !nivel_atividade || texto.length < 10) return;
+
+            dom.dietError.classList.add('hidden');
+            dom.dietBtn.classList.add('loading');
+            dom.dietRetryBtn.classList.add('hidden');
+
+            // Sanitização leve client-side
+            const sanitized = texto
+                .replace(/<[^>]*>/g, '')
+                .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            const requestBody = {
+                sexo,
+                idade,
+                peso_kg,
+                altura_cm,
+                nivel_atividade,
+                texto: sanitized,
+            };
+
+            // SPEC-042: Save form data for regeneration
+            state.lastFormData = { ...requestBody };
+            state.regenerationCount = 0;
+            state.regenerationStartTime = null;
+
+            // Loading com estágios dinâmicos
+            const stages = [
+                'Analisando sua rotina...',
+                'Calculando seu metabolismo...',
+                'Gerando 3 planos com IA...',
+                'Montando seu PDF...',
+            ];
+            let stageIdx = 0;
+            showLoading(stages[0]);
+            const stageInterval = setInterval(() => {
+                stageIdx = Math.min(stageIdx + 1, stages.length - 1);
+                dom.loadingText.textContent = stages[stageIdx];
+            }, 6000);
+
+            try {
+                const result = await apiRequest('POST', '/api/diet/generate', requestBody);
+                clearInterval(stageInterval);
+                state.dietResult = result;
+                renderResults(result);
+                showPage('results');
+            } catch (err) {
+                clearInterval(stageInterval);
+                hideLoading();
+                showDietError(err.message);
+            } finally {
+                dom.dietBtn.classList.remove('loading');
+            }
+        });
+    }
+
+    // Retry button
+    if (dom.dietRetryBtn) {
+        dom.dietRetryBtn.addEventListener('click', () => {
+            dom.dietError.classList.add('hidden');
+            dom.dietBtn.click();
+        });
+    }
+
+    // ── Navigation Links ──
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('[data-page]');
+        if (link) {
+            e.preventDefault();
+            const page = link.dataset.page;
+            if (page === 'logout') {
+                logout();
+            } else {
+                showPage(page);
+            }
+        }
+    });
+
+    // ── Logout Button ──
+    dom.btnLogout.addEventListener('click', logout);
+
+    // ── New Diet Button ──
+    dom.btnNewDiet.addEventListener('click', () => {
+        showPage('diet');
+        dom.dietTextarea.value = '';
+        dom.dietSexo.value = '';
+        dom.dietIdade.value = '';
+        dom.dietPeso.value = '';
+        dom.dietAltura.value = '';
+        dom.dietAtividade.value = '';
+        _updateCharCounter();
+    });
+
+    // ── Clear field errors on input ──
+    document.querySelectorAll('.form-input, .form-select').forEach(el => {
+        el.addEventListener('input', () => {
+            el.classList.remove('error');
+            const parent = el.closest('.form-group');
+            if (parent) {
+                const errorEl = parent.querySelector('.form-error');
+                if (errorEl) errorEl.textContent = '';
+            }
+        });
+    });
+
+    // ── SPEC-040: History navigation ──
+    const navHistory = document.getElementById('nav-history');
+    if (navHistory) {
+        navHistory.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!authToken) { showPage('login'); return; }
+            showPage('history');
+            _loadHistory(1);
+        });
+    }
+
+    // ── Show login page by default ──
+    showPage('login');
+});
+
+
+// ═══════════════════════════════════════════════════════════
+// SPEC-040 — Histórico de Gerações
+// ═══════════════════════════════════════════════════════════
+
+const HISTORY_PAGE_SIZE = 10;
+
+async function _loadHistory(page = 1) {
+    const listEl = document.getElementById('history-list');
+    const pagEl = document.getElementById('history-pagination');
+    if (!listEl || !pagEl) return;
+
+    listEl.innerHTML = '<div class="loading-spinner">Carregando histórico...</div>';
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/diet/history?page=${page}&limit=${HISTORY_PAGE_SIZE}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (resp.status === 401) {
+            listEl.innerHTML = '<p class="empty-state">Faça login para ver seu histórico.</p>';
+            return;
+        }
+
+        const data = await resp.json();
+
+        if (!data.items || data.items.length === 0) {
+            listEl.innerHTML = '<p class="empty-state">Nenhum plano gerado ainda. 🍽️</p>';
+            pagEl.innerHTML = '';
+            return;
+        }
+
+        // Render items
+        listEl.innerHTML = data.items.map(item => {
+            const dataFormatada = item.data_geracao
+                ? new Date(item.data_geracao).toLocaleDateString('pt-BR')
+                : '-';
+            const objetivoLabel = {
+                'perda_de_peso': '📉 Perda de Peso',
+                'manutencao': '⚖️ Manutenção',
+                'ganho_de_massa': '💪 Ganho de Massa',
+            }[item.objetivo] || item.objetivo;
+
+            const planosResumo = (item.resumo && item.resumo.planos)
+                ? item.resumo.planos.map(p => `<span class="history-plan-tag">${p.nome}</span>`).join(' ')
+                : '';
+
+            const pdfBtn = item.pdf_disponivel
+                ? `<a href="${API_BASE}${item.pdf_url}" target="_blank" class="btn btn-sm btn-success">📄 PDF</a>`
+                : '<span class="text-muted">PDF expirado</span>';
+
+            return `
+                <div class="history-card">
+                    <div class="history-card-header">
+                        <span class="history-date">${dataFormatada}</span>
+                        <span class="history-goal">${objetivoLabel}</span>
+                        <span class="history-kcal">${(item.get_calorico || 0).toFixed(0)} kcal</span>
+                    </div>
+                    <div class="history-card-body">
+                        <div class="history-plans">${planosResumo}</div>
+                        <div class="history-actions">
+                            ${pdfBtn}
+                            <button class="btn btn-sm btn-danger" onclick="_deleteHistory(${item.sessao_id})">🗑️ Excluir</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Pagination
+        pagEl.innerHTML = '';
+        if (data.pages > 1) {
+            for (let p = 1; p <= data.pages; p++) {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm ' + (p === data.page ? 'btn-primary' : 'btn-secondary');
+                btn.textContent = p;
+                btn.addEventListener('click', () => _loadHistory(p));
+                pagEl.appendChild(btn);
+            }
+        }
+
+    } catch (err) {
+        listEl.innerHTML = '<p class="error-msg">Erro ao carregar histórico.</p>';
+    }
+}
+
+async function _deleteHistory(sessaoId) {
+    if (!confirm('Tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita.')) return;
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/diet/${sessaoId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!resp.ok) {
+            alert('Erro ao excluir. Tente novamente.');
+            return;
+        }
+
+        // Recarregar página atual
+        const pagEl = document.getElementById('history-pagination');
+        const currentPage = pagEl.querySelector('.btn-primary')?.textContent || '1';
+        _loadHistory(parseInt(currentPage));
+
+    } catch (err) {
+        alert('Erro ao excluir. Tente novamente.');
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// SPEC-042 — Regeneração Inteligente
+// ═══════════════════════════════════════════════════════════
+
+function _showToast(message, duration = 4000) {
+    const existing = document.getElementById('regenerate-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'regenerate-toast';
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add('toast-visible'));
+
+    setTimeout(() => {
+        toast.classList.remove('toast-visible');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+async function _regenerateDiet() {
+    if (!state.lastFormData) {
+        _showToast('Nenhum dado da geração anterior encontrado.');
+        return;
+    }
+
+    // SPEC-042 REGEN-05: Contador de regenerações
+    const now = Date.now();
+    if (!state.regenerationStartTime || (now - state.regenerationStartTime) > 120000) {
+        state.regenerationCount = 0;
+        state.regenerationStartTime = now;
+    }
+    state.regenerationCount++;
+
+    if (state.regenerationCount >= 3) {
+        _showToast('💡 Que tal ajustar sua rotina para mais variação?', 6000);
+    }
+
+    // SPEC-042 REGEN-04: Coletar alimentos dos planos atuais
+    const evitarAlimentos = [];
+    if (state.dietResult && state.dietResult.planos) {
+        for (const plano of state.dietResult.planos) {
+            if (plano.refeicoes) {
+                for (const ref of plano.refeicoes) {
+                    if (ref.alimentos) {
+                        for (const alimento of ref.alimentos) {
+                            if (alimento.nome && !evitarAlimentos.includes(alimento.nome)) {
+                                evitarAlimentos.push(alimento.nome);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // SPEC-042 REGEN-06: Toast informativo
+    _showToast('🔄 Gerando novos planos com alimentos diferentes dos anteriores...');
+
+    // Reenviar com evitar_alimentos
+    const requestBody = {
+        ...state.lastFormData,
+        evitar_alimentos: evitarAlimentos,
+    };
+
+    try {
+        const result = await apiRequest('POST', '/api/diet/generate', requestBody);
+        state.dietResult = result;
+        renderResults(result);
+    } catch (err) {
+        _showToast('❌ ' + err.message, 5000);
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// SPEC-041 — Feedback de Planos
+// ═══════════════════════════════════════════════════════════
+
+const _MOTIVOS_LABELS = {
+    'alimentos_repetidos': 'Alimentos repetidos',
+    'quantidades_irreais': 'Quantidades irreais',
+    'combinacoes_ruins': 'Combinações ruins',
+    'alimentos_indesejados': 'Alimentos indesejados',
+    'outro': 'Outro',
+};
+
+async function _submitFeedback(planoIdx, positivo) {
+    const sessaoId = state.dietResult?.sessao_id || null;
+
+    if (!positivo) {
+        // Abrir mini-formulário com motivos
+        const motivo = await _showFeedbackForm();
+        if (motivo === null) return; // cancelado
+
+        try {
+            await apiRequest('POST', '/api/diet/feedback', {
+                sessao_id: sessaoId,
+                plano_idx: planoIdx,
+                positivo: false,
+                motivo: motivo,
+            });
+            _showToast('👎 Obrigado pelo feedback! Vamos melhorar.');
+        } catch (err) {
+            _showToast('❌ ' + err.message, 5000);
+        }
+    } else {
+        // 👍 positivo — envia direto
+        try {
+            await apiRequest('POST', '/api/diet/feedback', {
+                sessao_id: sessaoId,
+                plano_idx: planoIdx,
+                positivo: true,
+            });
+            _showToast('👍 Obrigado pelo feedback!');
+        } catch (err) {
+            _showToast('❌ ' + err.message, 5000);
+        }
+    }
+}
+
+function _showFeedbackForm() {
+    return new Promise((resolve) => {
+        // Remove existing modal
+        const existing = document.getElementById('feedback-modal');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'feedback-modal';
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-box feedback-modal">
+                <h3 class="modal-title">O que não gostou?</h3>
+                <div class="feedback-motivos">
+                    ${Object.entries(_MOTIVOS_LABELS).map(([key, label]) => `
+                        <button class="feedback-motivo-btn" data-motivo="${key}">${label}</button>
+                    `).join('')}
+                </div>
+                <button class="feedback-cancel-btn" data-motivo="">Cancelar</button>
+            </div>
+        `;
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                resolve(null);
+            }
+        });
+
+        overlay.querySelectorAll('.feedback-motivo-btn, .feedback-cancel-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const motivo = btn.dataset.motivo;
+                overlay.remove();
+                resolve(motivo || null);
+            });
+        });
+
+        document.body.appendChild(overlay);
+    });
+}

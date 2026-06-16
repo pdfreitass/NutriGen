@@ -1,0 +1,129 @@
+# NutriGen — Developer Skill
+
+## Regras de Ouro (leia antes de qualquer código)
+
+1. **Idioma:** Todo o projeto é em Português (PT-BR). Documentação, comentários, mensagens de erro, validações e textos exibidos ao usuário em português. Nomes técnicos de classes, métodos e bibliotecas podem ficar em inglês.
+2. **Leitura obrigatória:** Antes de qualquer tarefa, leia todos os arquivos da pasta `docs/`. Entenda a arquitetura atual antes de mexer.
+3. **Planejamento obrigatório:** Explique o que entendeu, apresente um plano, informe arquivos que serão modificados/criados, aguarde aprovação.
+4. **Proibido sem aprovação:** Criar/excluir/renomear arquivos, comandos Git, alterar arquitetura, refatorar grandes partes.
+5. **Commits:** Nenhum commit sem autorização explícita. Usar Conventional Commits (`feat:`, `fix:`, `refactor:`). Branch do dev: `devpedro`. Nunca push direto para `main`.
+6. **Código:** Seguir SOLID, Clean Code, evitar duplicação, nomes claros, código legível.
+7. **Segurança:** Nunca armazenar senhas em texto puro (bcrypt). Validar todas as entradas. Tratar exceções. Não expor informações sensíveis.
+8. **Banco de dados:** Não alterar estruturas existentes sem justificativa. Não remover tabelas/colunas/constraints sem aprovação.
+9. **Revisão obrigatória:** Após implementar, revisar código, identificar bugs, riscos de segurança, melhorias. Apresentar resumo técnico.
+
+---
+
+## Arquitetura (fonte: `docs/arquitetura.md`)
+
+O projeto é um **monólito modular** com 4 camadas:
+
+```
+API → Application → Domain ← Infrastructure
+```
+
+### Regra de dependência: SEMPRE apontar para dentro
+
+| Camada | Pasta | Pode depender de | NUNCA importar |
+|--------|-------|------------------|----------------|
+| **API** | `app/routers/` | Application | Domain, Infrastructure |
+| **Application** | `app/services/`, `app/use_cases/` | Domain, Infrastructure | API |
+| **Domain** | `app/models/`, `app/domain/` | NADA | Qualquer outra camada |
+| **Infrastructure** | `app/infrastructure/` | Domain (implementa interfaces) | Application, API |
+
+### Componentes principais
+
+| Componente | Arquivo | Responsabilidade |
+|------------|---------|------------------|
+| `DeepSeekClient` | `app/infrastructure/deepseek_client.py` | Cliente HTTP para DeepSeek — timeout, retry, JSON mode |
+| `FoodCatalog` | `app/infrastructure/food_catalog.py` | Catálogo de 68 alimentos em memória — busca, expansão de restrições |
+| `ExtractorService` | `app/services/extractor_service.py` | NL→JSON: texto livre → perfil estruturado |
+| `PlanGeneratorService` | `app/services/plan_generator_service.py` | Geração IA: perfil + metas → 3 planos em JSON |
+| `PlanValidator` | `app/services/plan_validator.py` | Validação pós-geração em 6 fases determinísticas |
+| `RestrictionExpander` | `app/services/restriction_expander.py` | Restrições genéricas → lista concreta de alimentos |
+| `NutritionCalculator` | `app/services/nutrition_calculator.py` | TMB (Mifflin-St Jeor), GET, distribuição de macros |
+| `GerarPlanosUseCase` | `app/use_cases/gerar_planos.py` | Orquestrador: extração → cálculo → geração → validação → persistência → PDF |
+
+---
+
+## Stack Tecnológica (fonte: `docs/arquitetura.md` §3)
+
+| Tecnologia | Versão | Uso |
+|------------|:------:|-----|
+| Python | 3.12+ | Linguagem principal |
+| FastAPI | 0.115+ | Framework web REST |
+| Pydantic | 2.9+ | Validação e serialização |
+| Uvicorn | 0.30+ | Servidor ASGI |
+| SQLAlchemy | 2.0+ | ORM (modo **síncrono** — pyodbc não suporta async!) |
+| pyodbc | 5.3+ | Driver ODBC para SQL Server Express |
+| Alembic | 1.18+ | Migrações de banco |
+| DeepSeek API | V4 Pro | Geração de planos via IA |
+| bcrypt | 4.2+ | Hash de senhas |
+| PyJWT | 2.9+ | Tokens JWT (expiração 24h) |
+| ReportLab | 4.2+ | Geração de PDF |
+| httpx | 0.28+ | Cliente HTTP para APIs externas (DeepSeek, ViaCEP) |
+
+---
+
+## Regras Críticas de Código (fonte: `docs/licoes-aprendidas.md`)
+
+### LLM e JSON
+- **SEMPRE** usar `response_format: { "type": "json_object" }` ao chamar DeepSeek (LL-001)
+- **NUNCA** confiar que o JSON da LLM está perfeito — 100% das respostas passam pelo `PlanValidator`
+- **SEMPRE** validar que o array `planos` tem exatamente 3 elementos
+- **SEMPRE** definir temperatura ≤ 0.7 (extração: 0.3, geração: 0.7)
+- **NUNCA** repassar ao usuário alimentos que não existem no `foods.json`
+
+### Banco de Dados
+- **SEMPRE** usar SQLAlchemy **síncrono** com pyodbc — driver ODBC é síncrono (LL-006)
+- `create_engine` (não `create_async_engine`), `sessionmaker` (não `async_sessionmaker`), endpoints `def` (não `async def`)
+- **SEMPRE** usar `datetime.now(timezone.utc)` — NUNCA `datetime.utcnow()` (depreciado 3.12)
+- Criar tabelas via `Base.metadata.create_all()` no lifespan do FastAPI (dev), Alembic (prod)
+
+### Prompts
+- System prompts em **INGLÊS** (modelo é mais preciso — LL-007)
+- Dados do usuário e alimentos em **PORTUGUÊS**
+- Restrições ANTES de preferências no prompt (LL-003)
+- Lista de restrições expandida para itens concretos antes de enviar ao prompt (LL-004)
+
+### Segurança
+- **NUNCA** hardcodar secrets — sempre `.env`
+- Variáveis obrigatórias: `DEEPSEEK_API_KEY`, `JWT_SECRET_KEY` → RuntimeError se ausentes
+- UUIDs de PDF validar com regex rigorosa: `^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`
+- **NUNCA** retornar stack traces para o cliente
+
+---
+
+## Estrutura de Pastas
+
+```
+NutriGen/
+├── app/
+│   ├── routers/          ← FastAPI routers (não contêm lógica de negócio)
+│   ├── services/         ← Serviços de aplicação (extração, geração, validação)
+│   ├── use_cases/        ← Orquestradores de fluxo
+│   ├── infrastructure/   ← DeepSeekClient, FoodCatalog, repositórios
+│   ├── models/           ← Dataclasses, Pydantic schemas, entidades
+│   ├── middleware/       ← Rate limiting, logging, request_id
+│   ├── config.py         ← Leitura centralizada de .env
+│   ├── exceptions.py     ← Exceções customizadas
+│   └── main.py           ← Entry point FastAPI
+├── data/
+│   └── foods.json        ← 68 alimentos, 8 categorias (fonte autoritativa)
+├── frontend/             ← HTML/CSS/JS vanilla (SPA)
+├── alembic/              ← Migrações de banco
+├── docs/                 ← Documentação completa
+│   └── specs/            ← 25 SPECs (SPEC-010 a SPEC-055)
+├── outputs/              ← PDFs gerados
+├── .env                  ← Variáveis de ambiente (NUNCA versionado)
+└── requirements.txt
+```
+
+---
+
+## IDs para Rastreabilidade no Código
+
+- **RN-XXX:** Regras de negócio (001-142) — referenciar em comentários
+- **LL-XXX:** Lições aprendidas (001-007) — evitar repetir erros
+- **ADR-XXX:** Decisões de arquitetura (001-006) — não contradizer
+- **SPEC-XXX:** Especificações (010-055, famílias de 10 em 10) — uma spec por feature

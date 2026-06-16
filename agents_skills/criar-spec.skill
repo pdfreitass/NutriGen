@@ -1,0 +1,444 @@
+# NutriGen — Skill: Criar SPEC
+
+## Objetivo
+
+Criar especificações (SPECs) 100% implementáveis por IA autônoma. Cada SPEC deve ser tão detalhada e determinística que uma IA consiga implementá-la sem ambiguidade — todos os inputs, outputs, validações, arquivos, regras de negócio e fluxos são explicitados.
+
+Além de criar o arquivo da SPEC, esta skill garante que **todos os documentos impactados** sejam atualizados coerentemente: visão, roadmap, requisitos, regras, fluxos e arquitetura.
+
+---
+
+## Regras de Ouro
+
+1. **Leia todos os docs primeiro.** Antes de criar qualquer SPEC, leia `docs/visao.md`, `docs/roadmap.md`, `docs/requisitos.md`, `docs/regras.md`, `docs/arquitetura.md`, `docs/fluxos.md`, `docs/ADR.md` e `docs/licoes-aprendidas.md`. A SPEC nova não pode contradizer nenhum documento existente.
+2. **Apresente o plano e aguarde aprovação.** Antes de escrever qualquer arquivo, explique o que entendeu da feature, apresente o escopo da SPEC e liste TODOS os documentos que serão modificados.
+3. **Numeração de 10 em 10 com famílias de subspecs.** Cada SPEC "dezena" (`010`, `020`, `030`...) é uma feature principal independente. Os números `01`-`09` dentro de cada dezena são **subspecs** que complementam ou estendem a SPEC principal daquela família:
+   - `SPEC-010` → feature principal (ex: "Autenticação e Cadastro")
+   - `SPEC-011` → subspec da 010 (ex: "Recuperação de Senha")
+   - `SPEC-012` → subspec da 010 (ex: "Login Social")
+   - `SPEC-020` → próxima feature principal
+   - `SPEC-021` → subspec da 020
+   
+   **Regra para determinar o próximo ID:**
+   - **Nova feature principal:** encontre o maior múltiplo de 10 existente, some +10. Ex: se a maior dezena é `020`, a próxima é `030`.
+   - **Nova subspec:** encontre a maior subspec daquela dezena, some +1. Ex: se `010`, `011`, `012` existem, a próxima subspec é `013`. Se não existe nenhuma subspec ainda, a primeira é a dezena+1 (ex: `011`).
+   - **Nunca pule números dentro da família.** As subspecs de `010` vão de `011` a `019`, sequencialmente.
+4. **Idioma:** Todo conteúdo em Português (PT-BR). Nomes técnicos de classes, métodos e bibliotecas podem ficar em inglês.
+5. **Não crie spec para features já existentes.** Se já existe uma SPEC para aquela funcionalidade, diga ao usuário e proponha revisão da SPEC existente em vez de criar nova.
+6. **Nunca remova nem renume SPECs existentes.** SPECs são imutáveis após criadas (apenas o status muda). Se uma SPEC se tornar obsoleta, marque `[OBSOLETA — substituída por SPEC-XXX]`.
+
+---
+
+## Fluxo de Criação de uma SPEC
+
+### Fase A — Análise e Planejamento
+
+Antes de criar qualquer arquivo, execute estes passos e apresente o resultado ao usuário:
+
+```
+A1. Leia docs/visao.md        → entenda a feature no contexto do produto
+A2. Leia docs/roadmap.md      → confira a fase correta e o próximo ID disponível
+A3. Leia docs/requisitos.md   → identifique RFs/RNFs relacionados ou novos necessários
+A4. Leia docs/regras.md       → identifique RNs relacionados ou novos necessários
+A5. Leia docs/fluxos.md       → identifique fluxos impactados ou novos necessários
+A6. Leia docs/arquitetura.md  → identifique componentes e camadas impactados
+A7. Leia docs/ADR.md          → confira que a feature não contradiz ADRs existentes
+A8. Leia docs/licoes-aprendidas.md → evite repetir erros conhecidos
+```
+
+Apresente ao usuário:
+
+```
+📋 Plano de Criação da SPEC-0X0
+
+Feature: [nome da feature]
+Fase: [1 / 2 / 3 / Backlog]
+Tipo: [Principal / Subspec]
+Subspec de: [SPEC-0X0 — somente se Subspec]
+Próximo ID disponível: SPEC-0X0 (múltiplo de 10 para Principal; sequencial dentro da dezena para Subspec)
+
+Documentos que serão MODIFICADOS:
+  - docs/specs/SPEC-0X0-[slug].md       ← NOVO
+  - docs/visao.md                        ← [sim/não] — seção X
+  - docs/roadmap.md                      ← [sim/não] — fase X
+  - docs/requisitos.md                   ← [sim/não] — RF-XXX, RNF-XXX
+  - docs/regras.md                       ← [sim/não] — RN-XXX
+  - docs/fluxos.md                       ← [sim/não] — fluxo X
+  - docs/arquitetura.md                  ← [sim/não] — seção X
+  - docs/ADR.md                          ← [sim/não] — ADR-XXX
+
+Novos IDs propostos:
+  - RFs: [RF-XXX, RF-XXX, ...]
+  - RNFs: [RNF-XXX, RNF-XXX, ...]
+  - RNs: [RN-XXX, RN-XXX, ...]
+
+Aguardando aprovação para prosseguir.
+```
+
+Só prossiga após aprovação explícita do usuário.
+
+---
+
+### Fase B — Criação do Arquivo da SPEC
+
+Crie o arquivo em `docs/specs/SPEC-0X0-[slug].md` seguindo o template abaixo. O slug usa kebab-case com palavras-chave da feature (ex: `historico-geracoes`, `recuperacao-senha`). 
+
+**Convenção de nomes de arquivo:**
+- `SPEC-010-autenticacao.md` — SPEC principal (dezena)
+- `SPEC-011-recuperacao-senha.md` — subspec da 010
+- `SPEC-012-login-social.md` — subspec da 010
+- `SPEC-020-geracao-planos.md` — próxima SPEC principal
+- `SPEC-021-validacao-planos.md` — subspec da 020
+
+O ID da SPEC principal é sempre um múltiplo de 10 (`010`, `020`, `030`...), com 3 dígitos e zero à esquerda. Subspecs usam números sequenciais dentro da dezena da SPEC pai (`011`-`019` pertencem a `010`; `021`-`029` pertencem a `020`).
+
+#### Template Obrigatório da SPEC
+
+```markdown
+# SPEC-0X0: [Nome da Feature]
+
+**Status:** ⚪ Pendente
+**Fase:** [1 / 2 / 3]
+**Tipo:** [Principal / Subspec]
+**Subspec de:** [SPEC-0X0 — somente se Tipo = Subspec; senão remover esta linha]
+**Depende de:** [SPEC-0X0, SPEC-0Y0 ou "Nenhuma"]
+**Data de criação:** YYYY-MM-DD
+
+---
+
+## 1. User Story
+
+Como [ator], quero [ação] para [benefício].
+
+---
+
+## 2. Critérios de Aceite
+
+Cada critério DEVE ser verificável de forma determinística (verdadeiro/falso, sem interpretação).
+
+### 2.1 [Categoria de critérios — ex: Backend, Frontend, Validação]
+
+- [ ] **[ID-curto]:** Descrição exata do comportamento esperado.
+  - **Input:** [o que entra — tipos, formatos, exemplos concretos]
+  - **Output esperado:** [o que sai — tipos, formatos, exemplos concretos]
+  - **Regras relacionadas:** RN-XXX, RN-YYY
+  - **RF relacionado:** RF-XXX
+
+- [ ] **[ID-curto]:** ...
+  - **Input:** ...
+  - **Output esperado:** ...
+
+*(Repetir para cada critério — mínimo 3, sem máximo. Quanto mais granular, melhor.)*
+
+### 2.2 [Outra categoria]
+
+...
+
+---
+
+## 3. Contratos de Dados
+
+### 3.1 Input (Requisição / Parâmetros)
+
+```json
+{
+  "campo1": "tipo — descrição",
+  "campo2": "tipo — descrição"
+}
+```
+
+| Campo | Tipo | Obrigatório | Validação | Exemplo |
+|-------|------|:----------:|-----------|---------|
+| `campo1` | `string` | Sim | regex / range / enum | `"exemplo real"` |
+| `campo2` | `int` | Sim | 1-120 | `28` |
+
+### 3.2 Output (Resposta)
+
+```json
+{
+  "campo1": "tipo — descrição",
+  "campo2": "tipo — descrição"
+}
+```
+
+| Campo | Tipo | Sempre presente? | Descrição |
+|-------|------|:----------------:|-----------|
+| `campo1` | `string` | Sim | ... |
+| `campo2` | `int` | Sim | ... |
+
+### 3.3 Erros Possíveis
+
+| HTTP | Código de erro | Gatilho | Mensagem (PT-BR) |
+|:----:|---------------|---------|-------------------|
+| 400 | `erro_x` | Quando ocorre | "Mensagem clara em português." |
+| 422 | `validacao_y` | Quando ocorre | "Mensagem clara em português." |
+| 500 | `interno_z` | Quando ocorre | "Mensagem clara em português." |
+
+---
+
+## 4. Fluxo de Implementação
+
+Descreva o fluxo em passos numerados, como uma função `main()`. Cada passo indica:
+- O componente responsável (classe, função, módulo)
+- O que ele faz (1 frase)
+- O que recebe e o que retorna (tipos)
+
+```
+Passo 1 — [Componente].[método]()
+  Recebe: [tipo]
+  Faz: [descrição de 1 frase]
+  Retorna: [tipo]
+  Se falhar: [tratamento]
+
+Passo 2 — ...
+```
+
+### 4.1 Diagrama de Sequência (textual)
+
+```
+CLIENTE → ROUTER → USE_CASE → SERVICE → INFRA
+  │         │         │          │         │
+  │──req──▶│         │          │         │
+  │         │──call──▶│          │         │
+  │         │         │──call───▶│         │
+  │         │         │          │──call──▶│
+  │         │         │          │◀─resp───│
+  │         │         │◀─resp───│          │
+  │         │◀─resp──│          │         │
+  │◀─resp──│         │          │         │
+```
+
+---
+
+## 5. Regras de Negócio Novas ou Modificadas
+
+| ID | Regra | Tipo |
+|----|-------|:----:|
+| RN-XXX | O sistema **DEVE** [regra específica]. | Nova |
+| RN-YYY | [Regra existente que é modificada por esta SPEC]. | Modificada |
+
+Se não houver regras novas, escrever: "Nenhuma regra nova. As regras aplicáveis são: RN-XXX (já existente)."
+
+---
+
+## 6. Requisitos Atendidos
+
+| ID | Requisito | Como esta SPEC atende |
+|----|-----------|----------------------|
+| RF-XXX | [descrição] | [explicação concreta de 1-2 frases] |
+
+Se houver novos RFs/RNFs: listar com o próximo ID disponível e marcar como "Novo — a ser adicionado em `docs/requisitos.md`".
+
+---
+
+## 7. Arquivos Previstos
+
+| Arquivo | Camada | Tipo | Descrição |
+|---------|:------:|:----:|-----------|
+| `app/routers/[nome].py` | API | Novo | Router com endpoint X |
+| `app/services/[nome].py` | Application | Novo | Serviço Y |
+| `app/models/[nome].py` | Domain | Modificado | Adicionar campo Z |
+| `app/infrastructure/[nome].py` | Infrastructure | Novo | Repositório W |
+
+Usar "Novo", "Modificado" ou "Nenhum (usa existentes)".
+
+---
+
+## 8. Notas Técnicas e Restrições
+
+- **Performance:** [latência esperada, limites]
+- **Segurança:** [considerações específicas de segurança]
+- **Compatibilidade:** [o que não pode quebrar]
+- **Premissas:** [assunções que a IA deve adotar na implementação]
+- **Decisões de design:** [escolhas feitas + justificativa + alternativas descartadas]
+- **Referências:** [links para docs, ADRs, SPECs relacionadas]
+```
+
+---
+
+### Fase C — Atualização dos Documentos Relacionados
+
+Após criar o arquivo da SPEC, atualize CADA documento pertinente. Siga a ordem abaixo.
+
+#### C.1 — Atualizar `docs/roadmap.md`
+
+1. Se for uma **SPEC Principal** (dezena, ex: `030`):
+   - Determine a fase correta (1=MVP, 2=Refina Experiência, 3=Escala) ou crie nova fase se justificado.
+   - Adicione a linha na tabela da fase: `| [SPEC-0X0](SPEC-0X0-slug.md) | Nome da Feature | ⚪ Pendente |`
+   - Atualize o resumo quantitativo no topo (Total de SPECs, Pendentes, Progresso).
+   - Atualize a barra de progresso.
+
+2. Se for uma **Subspec** (ex: `031`, subspec de `030`):
+   - Adicione a linha **imediatamente abaixo** da SPEC pai, com indentação visual para indicar a hierarquia:
+     ```
+     | [SPEC-030](SPEC-030-slug.md) | Feature Principal X | ⚪ Pendente |
+     |   ↳ [SPEC-031](SPEC-031-slug.md) | Subspec: Detalhe Y | ⚪ Pendente |
+     ```
+   - Subspecs contam no total de SPECs e no progresso normalmente.
+
+3. Se a feature JÁ existe no roadmap como placeholder:
+   - Apenas confirme que o link está correto e o status é `⚪ Pendente`.
+
+#### C.2 — Atualizar `docs/visao.md`
+
+Se a funcionalidade NÃO está descrita em `visao.md`:
+
+1. Adicione uma subseção na **seção 1 (Visão do Cliente)** explicando:
+   - Que dor resolve
+   - Como o usuário interage com a feature
+   - O que define sucesso para o cliente nessa feature
+
+2. Adicione uma subseção na **seção 2 (Visão de Engenharia)** descrevendo:
+   - O fluxo de alto nível específico da feature
+   - Componentes novos envolvidos
+
+3. Se a feature tem impacto no negócio, adicione na **seção 3 (Visão do Comprador)**:
+   - Como entrega valor (diferencial, retenção, monetização)
+   - Métricas específicas de sucesso
+
+4. Se a feature gera dados administrativos, adicione na **seção 4 (Visão do Administrador)**:
+   - O que monitorar, métricas, alertas
+
+5. Atualize a tabela da **seção 0.2 (Roadmap de Especificações)** adicionando a nova SPEC na fase correta.
+
+6. Atualize a data de "Última atualização" no topo do documento.
+
+**Regra:** Sempre adicione valor de negócio. Não basta dizer "é uma feature técnica". Explique COMO o usuário final se beneficia.
+
+#### C.3 — Atualizar `docs/requisitos.md`
+
+Se a SPEC introduz novos requisitos ou modifica existentes:
+
+1. Para cada novo RF: gere o próximo ID disponível (RF-073+), adicione na tabela do módulo correto com prioridade MoSCoW.
+2. Para cada novo RNF: gere o próximo ID disponível (RNF-052+), adicione na tabela da categoria correta.
+3. Atualize a matriz MoSCoW (seção 3) incluindo os novos IDs nas categorias corretas.
+4. Atualize o resumo quantitativo (seção 4).
+5. Se a SPEC implementa um requisito existente que estava pendente, NÃO duplique — apenas referencie.
+
+#### C.4 — Atualizar `docs/regras.md`
+
+Se a SPEC introduz novas regras de negócio:
+
+1. Gere o próximo ID disponível (RN-143+).
+2. Adicione na seção temática correta (Geração, Validação, Saúde, Apresentação, Dados).
+3. Use o formato: `| **RN-XXX** | O sistema **DEVE** [regra específica e verificável]. |`
+4. Atualize o Índice de Regras no final do documento.
+5. Se a regra modifica uma existente: NÃO altere a original. Adicione a nova com nota: "_(Substitui RN-XXX)_" e marque a original com `[SUBSTITUÍDA por RN-XXX]`.
+
+#### C.5 — Atualizar `docs/fluxos.md`
+
+Se a SPEC introduz um novo fluxo ou modifica um existente:
+
+1. **Novo fluxo:** Adicione como "Fluxo X: [Nome]" seguindo o formato existente (Ator, Pré-condição, Passos numerados, Pós-condição, Exceções em tabela).
+2. **Modificação de fluxo existente:** Adicione um marcador `**(SPEC-0X0)**` no passo afetado explicando a alteração.
+3. Atualize o Mapa de Navegação entre Fluxos (diagrama textual no final) se pertinente.
+
+#### C.6 — Atualizar `docs/arquitetura.md`
+
+Se a SPEC introduz novos componentes arquiteturais ou modifica a arquitetura:
+
+1. Adicione a entidade na seção de modelo de dados (seção 7) se houver novas tabelas.
+2. Adicione o componente na tabela de componentes da camada correta (seção 2).
+3. Atualize o diagrama textual se necessário.
+4. Se a SPEC usa integração externa nova, adicione na seção 9.
+
+**Regra:** Mudanças arquiteturais profundas (nova camada, novo padrão) exigem um ADR. Veja C.7.
+
+#### C.7 — Atualizar `docs/ADR.md` (se aplicável)
+
+Se a SPEC envolve uma decisão arquitetural significativa que tem alternativas:
+
+1. Gere o próximo ID (ADR-007+).
+2. Siga o template documentado no próprio ADR.md:
+   - Contexto (2-4 frases)
+   - Decisão (1-2 frases)
+   - Alternativas consideradas (tabela com motivo de descarte)
+   - Consequências (positivas, negativas, requisitos)
+3. Adicione no índice.
+
+**Gatilhos para criar ADR:**
+- Escolha entre 2+ tecnologias/bibliotecas
+- Mudança de padrão arquitetural
+- Decisão de escopo que afeta a arquitetura (ex: "vamos ou não persistir isso?")
+- Trade-off significativo (performance vs simplicidade, custo vs latência)
+
+#### C.8 — Atualizar `docs/licoes-aprendidas.md` (se aplicável)
+
+Se durante a criação da SPEC você identificar um aprendizado relevante:
+
+1. Gere o próximo ID (LL-008+).
+2. Documente: data, contexto, problema, causa raiz, solução adotada, como evitar.
+3. Se gerar uma regra rápida, adicione na seção "Regras Rápidas".
+
+---
+
+### Fase D — Validação e Sumário
+
+Após criar/modificar todos os arquivos, apresente um sumário final:
+
+```
+✅ SPEC-0X0 criada com sucesso
+
+Arquivos criados:
+  - docs/specs/SPEC-0X0-[slug].md
+
+Arquivos modificados:
+  - docs/visao.md              → [resumo das alterações]
+  - docs/roadmap.md            → [resumo das alterações]
+  - docs/requisitos.md         → [resumo das alterações]
+  - docs/regras.md             → [resumo das alterações]
+  - docs/fluxos.md             → [resumo das alterações]
+  - docs/arquitetura.md        → [resumo das alterações]
+  - docs/ADR.md                → [resumo das alterações]
+  - docs/licoes-aprendidas.md  → [resumo das alterações]
+
+Novos IDs criados:
+  - SPEC: SPEC-0X0
+  - RF: RF-XXX, RF-XXX
+  - RNF: RNF-XXX
+  - RN: RN-XXX, RN-XXX
+  - ADR: ADR-XXX
+  - LL: LL-XXX
+
+Próximos passos sugeridos:
+  1. Revisar a SPEC para garantir que está implementável
+  2. Validar com QA usando nutrigen-qa.skill
+  3. Iniciar implementação com nutrigen-dev.skill
+```
+
+---
+
+## Check-list de Qualidade da SPEC
+
+Antes de finalizar, verifique:
+
+- [ ] Todo critério de aceite é binário (passa/falha, sem ambiguidade)
+- [ ] Todo input tem tipo, formato, validação e exemplo concreto
+- [ ] Todo output tem tipo, formato e exemplo concreto
+- [ ] Todo erro possível está mapeado com HTTP status + código + mensagem PT-BR
+- [ ] O fluxo de implementação cobre o happy path E todos os branches de erro
+- [ ] As regras de negócio referenciadas existem em `docs/regras.md`
+- [ ] Os requisitos referenciados existem em `docs/requisitos.md`
+- [ ] A arquitetura proposta respeita `API → Application → Domain ← Infrastructure`
+- [ ] A SPEC não contradiz nenhum ADR vigente
+- [ ] A SPEC não repete erros documentados em `docs/licoes-aprendidas.md`
+- [ ] Todo documento impactado foi atualizado
+- [ ] O valor para o usuário final está claro em `docs/visao.md`
+- [ ] A SPEC está no roadmap na fase correta
+- [ ] O ID da SPEC respeita o esquema de famílias: Principal = múltiplo de 10, Subspec = dezena+1..9 sequencial e não colide com existentes
+
+---
+
+## Anti-Padrões (o que NUNCA fazer)
+
+- ❌ Criar uma SPEC vaga com "a IA decide na hora". Toda decisão possível DEVE ser tomada na SPEC.
+- ❌ Criar SPEC sem ler todos os docs primeiro.
+- ❌ Modificar docs existentes sem avisar quais e por quê.
+- ❌ Usar IDs que colidem com existentes. Sempre verifique `docs/regras.md`, `docs/requisitos.md`, `docs/ADR.md`.
+- ❌ Pular a atualização de documentos relacionados "porque é óbvio". Nada é óbvio para a próxima IA.
+- ❌ Criar SPEC para feature que já existe. Consulte `docs/specs/` e `docs/roadmap.md` primeiro.
+- ❌ Criar uma subspec sem SPEC pai. Subspecs (`011`-`019`) só existem se a SPEC principal da dezena (`010`) existir.
+- ❌ Criar SPEC com ID quebrando a família (ex: pular de `011` para `015`). Subspecs devem ser sequenciais: `011`, `012`, `013`...
+- ❌ Escrever critérios de aceite subjetivos ("o plano deve ser bom", "a interface deve ser bonita"). Sempre mensurável.
+- ❌ Deixar a SPEC sem contratos de dados (input/output JSON). Toda SPEC que envolve API DEVE ter schemas.
+- ❌ Assumir que "o desenvolvedor depois decide". A SPEC é o contrato — tudo que é decisão de design deve estar nela.
